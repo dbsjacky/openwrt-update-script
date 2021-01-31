@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#The script comes from Internet, the author is unknown, special thanks.
 FileID="$1";
 
 export URL='https://docs.google.com/uc';
