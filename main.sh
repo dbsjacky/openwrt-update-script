@@ -557,7 +557,7 @@ cat>${path}/lede/rename.sh<<EOF
 #/usr/bin/bash
 path=\$(dirname \$(readlink -f \$0))
 cd \${path}
-	if [ ! -f \${path}/bin/targets/x86/64/*combined.img.gz ]; then
+	if [ ! -f \${path}/bin/targets/x86/64/*combined.img.gz ] >/dev/null 2>&1; then
 		echo
 		echo "您编译时未选择压缩固件，故不进行重命名操作…"
 		echo
@@ -842,7 +842,7 @@ cat>${path}/lede/rename.sh<<EOF
 #/usr/bin/bash
 path=\$(dirname \$(readlink -f \$0))
 cd \${path}
-	if [ ! -f \${path}/bin/targets/x86/64/*combined.img.gz ]; then
+	if [ ! -f \${path}/bin/targets/x86/64/*combined.img.gz ] >/dev/null 2>&1; then
 		echo
 		echo "您编译时未选择压缩固件，故不进行重命名操作…"
 		echo
@@ -1112,7 +1112,7 @@ cat>${path}/openwrt/rename.sh<<EOF
 #/usr/bin/bash
 path=\$(dirname \$(readlink -f \$0))
 cd \${path}
-	if [ ! -f \${path}/bin/targets/x86/64/*squashfs.img.gz ]; then
+	if [ ! -f \${path}/bin/targets/x86/64/*squashfs.img.gz ] >/dev/null 2>&1; then
 		echo
 		echo "您编译时未选择压缩固件，故不进行重命名操作…"
 		echo
@@ -1399,7 +1399,7 @@ cat>${path}/openwrt/rename.sh<<EOF
 #/usr/bin/bash
 path=\$(dirname \$(readlink -f \$0))
 cd \${path}
-	if [ ! -f \${path}/bin/targets/x86/64/*squashfs.img.gz ]; then
+	if [ ! -f \${path}/bin/targets/x86/64/*squashfs.img.gz ] >/dev/null 2>&1; then
 		echo
 		echo "您编译时未选择压缩固件，故不进行重命名操作…"
 		echo
