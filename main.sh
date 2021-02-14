@@ -228,7 +228,10 @@ case $num1 in
 	Y|y)
     echo -e "\033[32m >>>正在从谷歌网盘拉取dl文件，请稍后…-> \033[0m"
 	echo
-	wget -P ${path}/wget/gdlink 'https://git.io/Jt4cj' -O ${path}/wget/gdlink
+	if [ ! -d ${path}/wget ]; then
+		mkdir -p ${path}/wget
+	fi
+	wget -P ${path}/wget/ 'https://git.io/Jt4cj' -O ${path}/wget/gdlink
 	bash ${path}/wget/gdlink 'https://drive.google.com/u/0/uc?id=1BJTkJgwinKL67i0gb_tG2p3OE-Hv_4uA&export=download' |xargs -n1 wget -c -O ${path}/dev_dl.tar.gz
 	if [[ ! -f ${path}/dev_dl.tar.gz ]]; then
 		echo "您下载dl文件失败，请检查网络重试…"
@@ -273,7 +276,10 @@ case $num1 in
 	Y|y)
      echo -e "\033[32m >>>正在从谷歌网盘拉取dl文件，请稍后…-> \033[0m"
 	echo
-	wget -P ${path}/wget/gdlink 'https://git.io/Jt4cj' -O ${path}/wget/gdlink
+	if [ ! -d ${path}/wget ]; then
+		mkdir -p ${path}/wget
+	fi
+	wget -P ${path}/wget/ 'https://git.io/Jt4cj' -O ${path}/wget/gdlink
 	bash ${path}/wget/gdlink 'https://drive.google.com/u/0/uc?id=1QsoMiy4s0ovNLcbETSaYWEpM_0YYP0rA&export=download' |xargs -n1 wget -c -O ${path}/sta_dl.tar.gz
 	if [[ ! -f ${path}/sta_dl.tar.gz ]]; then
 		echo "您下载dl文件失败，请检查网络重试…"
@@ -487,8 +493,35 @@ if [ ! -d  "${path}/lede/feeds/helloworld/xray-core" ]; then
 fi
 echo
 if [ ! -d  "xray_update" ]; then
-	echo "xray_update文件夹不存在，准备创建…"
 	mkdir -p ${path}/xray_update
+fi
+#获取xray-core/Makefile最新的版本号信息并修改；
+wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
+#sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
+new_xray=`cat ${path}/xray_lastest`
+rm -rf ${path}/xray_lastest
+#本地版本号；
+grep "PKG_VERSION:=" ${path}/lede/feeds/helloworld/xray-core/Makefile | awk -F "=" '{print $2}' > ${path}/jud_Makefile
+old_xray=`cat ${path}/jud_Makefile`
+rm -rf ${path}/jud_Makefile
+echo
+if [ "$new_xray" = "$old_xray" ]; then
+	echo "no_update" > ${path}/noxray
+else
+	sed -i "s/.*PKG_VERSION:=.*/PKG_VERSION:=$new_xray/" ${path}/lede/feeds/helloworld/xray-core/Makefile
+	#计算xray最新发布版本源码哈希值
+	PKG_SOURCE_URL=https://codeload.github.com/XTLS/xray-core/tar.gz/v${new_xray}?
+	wget -P ${path}/xray_update "$PKG_SOURCE_URL" -O  ${path}/xray_update/xray-core.tar.gz >/dev/null 2>&1
+	sleep 0.1
+	sha256sum ${path}/xray_update/xray-core.tar.gz > ${path}/xray_update/xray-core.tar.gz.sha256sum
+	grep "xray-core.tar.gz" ${path}/xray_update/xray-core.tar.gz.sha256sum | awk -F " " '{print $1}' | sed 's/ //g' > ${path}/xray_update/xray-core_sha256sum
+	echo
+	xray_sha256sum=`cat ${path}/xray_update/xray-core_sha256sum`
+	rm -rf ${path}/xray_update/xray-core.tar.gz.sha256sum
+	rm -rf ${path}/xray_update/xray-core_sha256sum
+	rm -rf ${path}/xray_update/xray-core.tar.gz
+	sed -i "s/.*PKG_HASH:=.*/PKG_HASH:=$xray_sha256sum/" ${path}/lede/feeds/helloworld/xray-core/Makefile
+	echo "update" > ${path}/noxray
 fi
 echo
 ##passwall
@@ -607,11 +640,11 @@ fi
 sleep 0.2
 nolede=`cat ${path}/nolede`
 noclash=`cat ${path}/noclash`
-#noxray=`cat ${path}/noxray`
+noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
 sleep 0.5
-if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
+if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$nossr" = "update" ) || ("$noxray" = "update") || ("$nopassw"  = "update" ) ]]; then
 	clear
 	echo
 	echo "发现更新，请稍后…"
@@ -644,7 +677,7 @@ if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$nossr" = "update" 
 	fi
 fi
 echo
-if [[ ("$nolede" = "no_update") && ("$noclash" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
+if [[ ("$nolede" = "no_update") && ("$noclash" = "no_update") && ("$noxray" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
 	clear
 	echo
 	echo "呃呃…检查lede/ssr+/xray/passwall/openclash源码，没有一个源码更新…开始进入强制更新模式…"
@@ -772,10 +805,36 @@ if [ ! -d  "${path}/lede/feeds/helloworld/xray-core" ]; then
 fi
 echo
 if [ ! -d  "xray_update" ]; then
-	echo "xray_update文件夹不存在，准备创建…"
 	mkdir -p ${path}/xray_update
 fi
+#获取xray-core/Makefile最新的版本号信息并修改；
+wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
+#sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
+new_xray=`cat ${path}/xray_lastest`
+rm -rf ${path}/xray_lastest
+#本地版本号；
+grep "PKG_VERSION:=" ${path}/lede/feeds/helloworld/xray-core/Makefile | awk -F "=" '{print $2}' > ${path}/jud_Makefile
+old_xray=`cat ${path}/jud_Makefile`
+rm -rf ${path}/jud_Makefile
 echo
+if [ "$new_xray" = "$old_xray" ]; then
+	echo "no_update" > ${path}/noxray
+else
+	sed -i "s/.*PKG_VERSION:=.*/PKG_VERSION:=$new_xray/" ${path}/lede/feeds/helloworld/xray-core/Makefile
+	#计算xray最新发布版本源码哈希值
+	PKG_SOURCE_URL=https://codeload.github.com/XTLS/xray-core/tar.gz/v${new_xray}?
+	wget -P ${path}/xray_update "$PKG_SOURCE_URL" -O  ${path}/xray_update/xray-core.tar.gz >/dev/null 2>&1
+	sleep 0.1
+	sha256sum ${path}/xray_update/xray-core.tar.gz > ${path}/xray_update/xray-core.tar.gz.sha256sum
+	grep "xray-core.tar.gz" ${path}/xray_update/xray-core.tar.gz.sha256sum | awk -F " " '{print $1}' | sed 's/ //g' > ${path}/xray_update/xray-core_sha256sum
+	echo
+	xray_sha256sum=`cat ${path}/xray_update/xray-core_sha256sum`
+	rm -rf ${path}/xray_update/xray-core.tar.gz.sha256sum
+	rm -rf ${path}/xray_update/xray-core_sha256sum
+	rm -rf ${path}/xray_update/xray-core.tar.gz
+	sed -i "s/.*PKG_HASH:=.*/PKG_HASH:=$xray_sha256sum/" ${path}/lede/feeds/helloworld/xray-core/Makefile
+	echo "update" > ${path}/noxray
+fi
 ##passwall
 git -C ${path}/lede/feeds/passwall pull >/dev/null 2>&1
 git -C ${path}/lede/feeds/passwall rev-parse HEAD > new_passw
@@ -892,11 +951,11 @@ fi
 sleep 0.2
 nolede=`cat ${path}/nolede`
 noclash=`cat ${path}/noclash`
-#noxray=`cat ${path}/noxray`
+noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
 sleep 0.5
-if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
+if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
 	clear
 	echo
 	echo "发现更新，请稍后…"
@@ -929,7 +988,7 @@ if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$nossr" = "update" 
 	fi
 fi
 echo
-if [[ ("$nolede" = "no_update") && ("$noclash" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
+if [[ ("$nolede" = "no_update") && ("$noclash" = "no_update") && ("$noxray" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
 	clear
 	echo
 	echo "呃呃…检查lede/ssr+/xray/passwall/openclash源码，没有一个源码更新哟…还是稍安勿躁…"
@@ -1042,10 +1101,36 @@ if [ ! -d  "${path}/openwrt/feeds/helloworld/xray-core" ]; then
 fi
 echo
 if [ ! -d  "xray_update" ]; then
-	echo "xray_update文件夹不存在，准备创建…"
 	mkdir -p ${path}/xray_update
 fi
+#获取xray-core/Makefile最新的版本号信息并修改；
+wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
+#sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
+new_xray=`cat ${path}/xray_lastest`
+rm -rf ${path}/xray_lastest
+#本地版本号；
+grep "PKG_VERSION:=" ${path}/openwrt/feeds/helloworld/xray-core/Makefile | awk -F "=" '{print $2}' > ${path}/jud_Makefile
+old_xray=`cat ${path}/jud_Makefile`
+rm -rf ${path}/jud_Makefile
 echo
+if [ "$new_xray" = "$old_xray" ]; then
+	echo "no_update" > ${path}/noxray
+else
+	sed -i "s/.*PKG_VERSION:=.*/PKG_VERSION:=$new_xray/" ${path}/openwrt/feeds/helloworld/xray-core/Makefile
+	#计算xray最新发布版本源码哈希值
+	PKG_SOURCE_URL=https://codeload.github.com/XTLS/xray-core/tar.gz/v${new_xray}?
+	wget -P ${path}/xray_update "$PKG_SOURCE_URL" -O  ${path}/xray_update/xray-core.tar.gz >/dev/null 2>&1
+	sleep 0.1
+	sha256sum ${path}/xray_update/xray-core.tar.gz > ${path}/xray_update/xray-core.tar.gz.sha256sum
+	grep "xray-core.tar.gz" ${path}/xray_update/xray-core.tar.gz.sha256sum | awk -F " " '{print $1}' | sed 's/ //g' > ${path}/xray_update/xray-core_sha256sum
+	echo
+	xray_sha256sum=`cat ${path}/xray_update/xray-core_sha256sum`
+	rm -rf ${path}/xray_update/xray-core.tar.gz.sha256sum
+	rm -rf ${path}/xray_update/xray-core_sha256sum
+	rm -rf ${path}/xray_update/xray-core.tar.gz
+	sed -i "s/.*PKG_HASH:=.*/PKG_HASH:=$xray_sha256sum/" ${path}/openwrt/feeds/helloworld/xray-core/Makefile
+	echo "update" > ${path}/noxray
+fi
 ##passwall
 git -C ${path}/openwrt/feeds/passwall pull >/dev/null 2>&1
 git -C ${path}/openwrt/feeds/passwall rev-parse HEAD > new_passw
@@ -1162,11 +1247,11 @@ fi
 sleep 0.2
 noopenwrt=`cat ${path}/noopenwrt`
 noclash=`cat ${path}/noclash`
-#noxray=`cat ${path}/noxray`
+noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
 sleep 0.5
-if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
+if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
 	clear
 	echo
 	echo "发现更新，请稍后…"
@@ -1199,7 +1284,7 @@ if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$nossr" = "updat
 	fi
 fi
 echo
-if [[ ("$noopenwrt" = "no_update") && ("$noclash" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
+if [[ ("$noopenwrt" = "no_update") && ("$noclash" = "no_update") && ("$noxray" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
 	clear
 	echo
 	echo "呃呃…检查openwrt/ssr+/xray/passwall/openclash源码，没有一个源码更新…开始进入强制更新模式…"
@@ -1329,10 +1414,36 @@ if [ ! -d  "${path}/openwrt/feeds/helloworld/xray-core" ]; then
 fi
 echo
 if [ ! -d  "xray_update" ]; then
-	echo "xray_update文件夹不存在，准备创建…"
 	mkdir -p ${path}/xray_update
 fi
+#获取xray-core/Makefile最新的版本号信息并修改；
+wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
+#sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
+new_xray=`cat ${path}/xray_lastest`
+rm -rf ${path}/xray_lastest
+#本地版本号；
+grep "PKG_VERSION:=" ${path}/openwrt/feeds/helloworld/xray-core/Makefile | awk -F "=" '{print $2}' > ${path}/jud_Makefile
+old_xray=`cat ${path}/jud_Makefile`
+rm -rf ${path}/jud_Makefile
 echo
+if [ "$new_xray" = "$old_xray" ]; then
+	echo "no_update" > ${path}/noxray
+else
+	sed -i "s/.*PKG_VERSION:=.*/PKG_VERSION:=$new_xray/" ${path}/openwrt/feeds/helloworld/xray-core/Makefile
+	#计算xray最新发布版本源码哈希值
+	PKG_SOURCE_URL=https://codeload.github.com/XTLS/xray-core/tar.gz/v${new_xray}?
+	wget -P ${path}/xray_update "$PKG_SOURCE_URL" -O  ${path}/xray_update/xray-core.tar.gz >/dev/null 2>&1
+	sleep 0.1
+	sha256sum ${path}/xray_update/xray-core.tar.gz > ${path}/xray_update/xray-core.tar.gz.sha256sum
+	grep "xray-core.tar.gz" ${path}/xray_update/xray-core.tar.gz.sha256sum | awk -F " " '{print $1}' | sed 's/ //g' > ${path}/xray_update/xray-core_sha256sum
+	echo
+	xray_sha256sum=`cat ${path}/xray_update/xray-core_sha256sum`
+	rm -rf ${path}/xray_update/xray-core.tar.gz.sha256sum
+	rm -rf ${path}/xray_update/xray-core_sha256sum
+	rm -rf ${path}/xray_update/xray-core.tar.gz
+	sed -i "s/.*PKG_HASH:=.*/PKG_HASH:=$xray_sha256sum/" ${path}/openwrt/feeds/helloworld/xray-core/Makefile
+	echo "update" > ${path}/noxray
+fi
 ##passwall
 git -C ${path}/openwrt/feeds/passwall pull >/dev/null 2>&1
 git -C ${path}/openwrt/feeds/passwall rev-parse HEAD > new_passw
@@ -1449,11 +1560,11 @@ fi
 sleep 0.2
 noopenwrt=`cat ${path}/noopenwrt`
 noclash=`cat ${path}/noclash`
-#noxray=`cat ${path}/noxray`
+noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
 sleep 0.5
-if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
+if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
 	clear
 	echo
 	echo "发现更新，请稍后…"
@@ -1486,7 +1597,7 @@ if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$nossr" = "updat
 	fi
 fi
 echo
-if [[ ("$noopenwrt" = "no_update") && ("$noclash" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
+if [[ ("$noopenwrt" = "no_update") && ("$noclash" = "no_update") && ("$noxray" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
 	clear
 	echo
 	echo "呃呃…检查openwrt/ssr+/xray/passwall/openclash源码，没有一个源码更新哟…还是稍安勿躁…"
