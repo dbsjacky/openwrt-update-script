@@ -4,7 +4,10 @@ function _sys_judg()
 sysa=`cat /etc/issue`
 sysb="Ubuntu"
 sysc=`getconf LONG_BIT`
-if [[ `whoami` = "root" ]];then
+local timeout=1
+local target=www.google.com
+local ret_code=`curl -I -s --connect-timeout ${timeout} ${target} -w %{http_code} | tail -n1`
+if [[ $USER = "root" ]];then
     clear
     echo
     echo -e "\033[31m警告：请在非root用户下运行该脚本……\033[0m"
@@ -16,6 +19,37 @@ elif [[ ( $sysa != *$sysb* ) || ( $sysc != 64 ) ]]; then
     echo -e "\033[31m警告：请在Ubuntu18+ x64系统下运行该脚本……\033[0m"
     echo
     exit
+fi
+#检查网络状态
+if [ "x$ret_code" != "x200" ]; then
+	clear
+	echo
+	echo -e "\033[31m警告：您网络不能科学上网，请检查网络后重试…\033[0m"
+	echo
+	exit
+fi
+# 判断是否安装了sudo
+if ! type sudo >/dev/null 2>&1; then
+    clear
+    echo
+    echo -e "\033[31m警告：您未安装sudo，请切换至root用户下安装(apt-get install sduo)…\033[0m"
+    echo
+    exit
+fi
+# 判断是否成功安装了wget
+if ! type wget >/dev/null 2>&1; then
+	echo
+    echo -e "\033[35m警告：您的系统未安装wget，正在给您安装，请稍后…\033[0m"
+	echo
+	sudo apt-get install wget -y >/dev/null 2>&1
+	sleep 0.1
+	if ! type wget >/dev/null 2>&1; then
+		clear
+		echo
+		echo -e "\033[31m警告：安装wget失败，请检查网络重试…\033[0m"
+		echo
+		exit
+	fi
 fi
 }
 path=$(dirname $(readlink -f $0))
@@ -77,7 +111,7 @@ cat <<EOF
 
 Openwrt Firmware One-click Update Compilation Script
 
-Script By Lenyu	Version v2.2.2
+Script By Lenyu	Version v2.3.0
 
 -----------------------------------
 >>>菜单主页:
@@ -359,7 +393,6 @@ esac
 }
 
 
-
 function dev_force_update()
 {
 if [[  ! -d ${path}/lede  ]]; then
@@ -377,16 +410,34 @@ echo
 echo "脚本正在运行中…"
 ##lede
 #由于源码xray位置改变，需要加入一个判断清除必要的文件
-if [ ! -d  "${path}/lede/feeds/helloworld/xray" ]; then
+if [ ! -d  "${path}/lede/feeds/helloworld/xray-core" ]; then
 	sed -i 's/#src-git helloworld/src-git helloworld/'  ${path}/lede/feeds.conf.default
 	rm -rf ${path}/lede/package/lean/xray
 	rm -rf ${path}/lede/tmp
 fi
 #清理
 rm -rf ${path}/lede/rename.sh
+rm -rf ${path}/lede/package/lean/default-settings/files/zzz-default-settings
+rm -rf ${path}/lede/package/base-files/files/bin/config_generate
+rm -rf ${path}/lede/feeds/helloworld/xray-core/Makefile
 echo
 git -C ${path}/lede pull >/dev/null 2>&1
 git -C ${path}/lede rev-parse HEAD > new_lede
+echo
+wget -P ${path}/lede/package/lean/default-settings/files https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/lede/package/lean/default-settings/files/zzz-default-settings >/dev/null 2>&1
+echo
+wget -P ${path}/lede/package/base-files/files/bin https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/base-files/files/bin/config_generate -O  ${path}/lede/package/base-files/files/bin/config_generate >/dev/null 2>&1
+echo
+sed -i 's/192.168.1.1/192.168.1.2/g' ${path}/lede/package/base-files/files/bin/config_generate
+echo
+#检查文件是否下载成功；
+if [[ ( ! -s ${path}/lede/package/lean/default-settings/files/zzz-default-settings) || ( ! -s ${path}/lede/package/base-files/files/bin/config_generate ) ]]; then # -s 判断文件长度是否不为0；
+	clear
+	echo
+	echo "同步下载openwrt源码出错，请检查网络问题…"
+	echo
+	exit
+fi
 new_lede=`cat new_lede`
 #判断old_lede是否存在，不存在创建
 if [ ! -f "old_lede" ]; then
@@ -404,94 +455,40 @@ else
 	echo $new_lede > old_lede
 fi
 echo
+##ssr+
+git -C ${path}/lede/feeds/helloworld pull >/dev/null 2>&1
+git -C ${path}/lede/feeds/helloworld rev-parse HEAD > new_ssr
+#增加xray的makefile文件
+wget -P ${path}/lede/feeds/helloworld/xray-core https://raw.githubusercontent.com/fw876/helloworld/master/xray-core/Makefile -O  ${path}/lede/feeds/helloworld/xray-core/Makefile >/dev/null 2>&1
+new_ssr=`cat new_ssr`
+#判断old_ssr是否存在，不存在创建
+if [ ! -f "old_ssr" ]; then
+  echo "old_ssr被删除正在创建！"
+  sleep 0.1
+  echo $new_ssr > old_ssr
+fi
+sleep 0.1
+old_ssr=`cat old_ssr`
+if [ "$new_ssr" = "$old_ssr" ]; then
+	echo "no_update" > ${path}/nossr
+else
+	echo "update" > ${path}/nossr
+	echo $new_ssr > old_ssr
+fi
+echo
 ##xray
 #由于源码xray位置改变，需要加入一个判断
-if [ ! -d  "${path}/lede/feeds/helloworld/xray" ]; then
+if [ ! -d  "${path}/lede/feeds/helloworld/xray-core" ]; then
 	clear
 	echo
 	echo "正在更新feeds源，请稍后…"
 	cd ${path}/lede && ./scripts/feeds update -a >/dev/null 2>&1 && ./scripts/feeds install -a >/dev/null 2>&1
 	cd ${path}
 fi
-clear
 echo
-echo "脚本正在运行中…"
 if [ ! -d  "xray_update" ]; then
 	echo "xray_update文件夹不存在，准备创建…"
 	mkdir -p ${path}/xray_update
-else
-	count=`ls ${path}/xray_update`
-	if [ "$count" > "0" ]; then  #判断文件夹是否为0,否则git拉去xray源码
-		git -C ${path}/xray_update pull >/dev/null 2>&1
-		git -C ${path}/xray_update rev-parse HEAD > ${path}/new_xray
-	else
-		git clone https://github.com/XTLS/Xray-core.git ${path}/xray_update #后面指定目录
-		git -C ${path}/xray_update pull >/dev/null 2>&1
-		git -C ${path}/xray_update rev-parse HEAD > ${path}/new_xray
-	fi
-fi
-echo
-new_xray=`cat new_xray`
-echo
-##智能判断PKG_VERSION项目的最新值##
-cat ${path}/xray_update/core/core.go > ${path}/PKG_VERSION
-grep "version  =" ${path}/PKG_VERSION > ${path}/PKG_VERSION1
-cat  ${path}/PKG_VERSION1 | cut -d \" -f 2 > ${path}/PKG_VERSION
-new_pkg_version=`cat ${path}/PKG_VERSION`
-grep "PKG_VERSION:=" ${path}/lede/feeds/helloworld/xray/Makefile > ${path}/PKG_VERSION2
-cat  ${path}/PKG_VERSION2 | cut -d = -f 2 > ${path}/PKG_VERSION3
-old_pkg_version=`cat ${path}/PKG_VERSION3`
-if [ "$new_pkg_version" != "$old_pkg_version" ]; then
-	echo "xray有新版本号，正在替换最新的版本号…"
-	sed -i "s/.*PKG_VERSION:.*/PKG_VERSION:=$new_pkg_version/" ${path}/lede/feeds/helloworld/xray/Makefile
-fi
-rm -rf ${path}/PKG_VERSION*
-echo
-#判断Makefile是否为源码版，如果是这修改为以git头更新的文件
-grep "PKG_SOURCE_VERSION:=" ${path}/lede/feeds/helloworld/xray/Makefile > ${path}/jud_Makefile
-if [ -s ${path}/jud_Makefile ]; then # -s 判断文件长度是否不为0，为0说明Makefile是源码版，需修改
-clear
-echo
-echo "脚本正在努力工作中，请稍微…"
-echo
-else
-clear
-echo
-echo "Makefile正在被脚本修改…"
-sleep 0.1
-echo
-sed -i 's/PKG_RELEASE:=1/PKG_RELEASE:=2/' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_BUILD_DIR:=$(BUILD_DIR)\/Xray-core-$(PKG_VERSION)/#PKG_BUILD_DIR:=$(BUILD_DIR)\/Xray-core-$(PKG_VERSION)/' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_SOURCE:=xray-core-$(PKG_VERSION).tar.gz/#PKG_SOURCE:=xray-core-$(PKG_VERSION).tar.gz/' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_SOURCE_URL:=https:\/\/codeload.github.com\/XTLS\/xray-core\/tar.gz\/v$(PKG_VERSION)?/#PKG_SOURCE_URL:=https:\/\/codeload.github.com\/XTLS\/xray-core\/tar.gz\/v$(PKG_VERSION)?/' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_HASH:=/#PKG_HASH:=/' ${path}/lede/feeds/helloworld/xray/Makefile
-#然后插入自定义的内容
-sed -i '18 a PKG_SOURCE_PROTO:=git' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i '19 a PKG_SOURCE_URL:=https://github.com/XTLS/xray-core.git' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i '20 a PKG_SOURCE_VERSION:=7da97635b28bfa7296fe79bbe7cd804a684317d9' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i '21 a PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz' ${path}/lede/feeds/helloworld/xray/Makefile
-fi
-rm -rf jud_Makefile
-echo
-##智能判断PKG_VERSION项目的最新值##
-echo
-#判断old_xray是否存在，不存在创建
-if [ ! -f "old_xray" ]; then
-  echo "old_xray被删除正在创建！"
-  sleep 0.1
-  echo $new_xray > old_xray
-fi
-sleep 0.1
-old_xray=`cat old_xray`
-#有xray更新就替换最新的commit分支id
-if [ "$new_xray" = "$old_xray" ]; then
-	echo "no_update" > ${path}/noxray
-else
-	echo "update" > ${path}/noxray
-	sleep 1
-	#替换最新的md5值 sed要使用""才会应用变量
-	sed -i "s/.*PKG_SOURCE_VERSION:.*/PKG_SOURCE_VERSION:=$new_xray/" ${path}/lede/feeds/helloworld/xray/Makefile
-	echo $new_xray > old_xray
 fi
 echo
 ##passwall
@@ -511,25 +508,6 @@ if [ "$new_passw" = "$old_passw" ]; then
 else
 	echo "update" > ${path}/nopassw
 	echo $new_passw > old_passw
-fi
-echo
-##ssr+
-git -C ${path}/lede/feeds/helloworld pull >/dev/null 2>&1
-git -C ${path}/lede/feeds/helloworld rev-parse HEAD > new_ssr
-new_ssr=`cat new_ssr`
-#判断old_ssr是否存在，不存在创建
-if [ ! -f "old_ssr" ]; then
-  echo "old_ssr被删除正在创建！"
-  sleep 0.1
-  echo $new_ssr > old_ssr
-fi
-sleep 0.1
-old_ssr=`cat old_ssr`
-if [ "$new_ssr" = "$old_ssr" ]; then
-	echo "no_update" > ${path}/nossr
-else
-	echo "update" > ${path}/nossr
-	echo $new_ssr > old_ssr
 fi
 echo
 ##openclash
@@ -566,17 +544,6 @@ if [ -s  "${path}/wget/zzz-default-settings" ]; then
 	if [ "${new_DISTRIB_REVISION}_dev_Len yu" != "${old_DISTRIB_REVISION}" ]; then #版本号相等且带_dev_Len yu的情况，则不变，因此要不等于才动作；
 		if [ "${new_DISTRIB_REVISION}" = "${old_DISTRIB_REVISION}" ]; then #版本号相等不带_dev_Len yu 的情况；
 			sed -i "s/${old_DISTRIB_REVISION}/${new_DISTRIB_REVISION}_dev_Len yu/"  ${path}/lede/package/lean/default-settings/files/zzz-default-settings
-		fi
-		echo
-		if [ "${new_DISTRIB_REVISION}" != "${old_DISTRIB_REVISION}" ]; then #版本号不同，可能带 _dev_Len yu，可能不带的情况；
-			grep "DISTRIB_REVISION=" ${path}/lede/package/lean/default-settings/files/zzz-default-settings | cut -d \_ -f 4  > ${path}/wget/DISTRIB_REVISION2
-			len_DISTRIB_REVISION=`cat ${path}/wget/DISTRIB_REVISION2`
-			#判断是否存在Len yu 后缀；
-			if [ "$len_DISTRIB_REVISION" = "Len yu" ]; then
-				sed -i "s/${old_DISTRIB_REVISION}/${new_DISTRIB_REVISION}/"  ${path}/lede/package/lean/default-settings/files/zzz-default-settings
-			else
-				sed -i "s/${old_DISTRIB_REVISION}/${new_DISTRIB_REVISION}_dev_Len yu/"  ${path}/lede/package/lean/default-settings/files/zzz-default-settings
-			fi
 		fi
 	fi
 	rm -rf ${path}/wget/DISTRIB_REVISION*
@@ -640,11 +607,11 @@ fi
 sleep 0.2
 nolede=`cat ${path}/nolede`
 noclash=`cat ${path}/noclash`
-noxray=`cat ${path}/noxray`
+#noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
 sleep 0.5
-if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
+if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
 	clear
 	echo
 	echo "发现更新，请稍后…"
@@ -677,7 +644,7 @@ if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$noxray" = "update"
 	fi
 fi
 echo
-if [[ ("$nolede" = "no_update") && ("$noclash" = "no_update") && ("$noxray" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
+if [[ ("$nolede" = "no_update") && ("$noclash" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
 	clear
 	echo
 	echo "呃呃…检查lede/ssr+/xray/passwall/openclash源码，没有一个源码更新…开始进入强制更新模式…"
@@ -709,8 +676,8 @@ if [[ ("$nolede" = "no_update") && ("$noclash" = "no_update") && ("$noxray" = "n
 	fi
 fi
 }
-echo
-echo
+
+
 function dev_noforce_update()
 {
 if [[  ! -d ${path}/lede  ]]; then
@@ -728,16 +695,34 @@ echo
 echo "脚本正在运行中…"
 ##lede
 #由于源码xray位置改变，需要加入一个判断清除必要的文件
-if [ ! -d  "${path}/lede/feeds/helloworld/xray" ]; then
+if [ ! -d  "${path}/lede/feeds/helloworld/xray-core" ]; then
 	sed -i 's/#src-git helloworld/src-git helloworld/'  ${path}/lede/feeds.conf.default
 	rm -rf ${path}/lede/package/lean/xray
 	rm -rf ${path}/lede/tmp
 fi
 #清理
 rm -rf ${path}/lede/rename.sh
+rm -rf ${path}/lede/package/lean/default-settings/files/zzz-default-settings
+rm -rf ${path}/lede/package/base-files/files/bin/config_generate
+rm -rf ${path}/lede/feeds/helloworld/xray-core/Makefile
 echo
 git -C ${path}/lede pull >/dev/null 2>&1
 git -C ${path}/lede rev-parse HEAD > new_lede
+echo
+wget -P ${path}/lede/package/lean/default-settings/files https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/lede/package/lean/default-settings/files/zzz-default-settings >/dev/null 2>&1
+echo
+wget -P ${path}/lede/package/base-files/files/bin https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/base-files/files/bin/config_generate -O  ${path}/lede/package/base-files/files/bin/config_generate >/dev/null 2>&1
+echo
+sed -i 's/192.168.1.1/192.168.1.2/g' ${path}/lede/package/base-files/files/bin/config_generate
+echo
+#检查文件是否下载成功；
+if [[ ( ! -s ${path}/lede/package/lean/default-settings/files/zzz-default-settings) || ( ! -s ${path}/lede/package/base-files/files/bin/config_generate ) ]]; then # -s 判断文件长度是否不为0；
+	clear
+	echo
+	echo "同步下载openwrt源码出错，请检查网络问题…"
+	echo
+	exit
+fi
 new_lede=`cat new_lede`
 #判断old_lede是否存在，不存在创建
 if [ ! -f "old_lede" ]; then
@@ -755,94 +740,40 @@ else
 	echo $new_lede > old_lede
 fi
 echo
+##ssr+
+git -C ${path}/lede/feeds/helloworld pull >/dev/null 2>&1
+git -C ${path}/lede/feeds/helloworld rev-parse HEAD > new_ssr
+#增加xray的makefile文件
+wget -P ${path}/lede/feeds/helloworld/xray-core https://raw.githubusercontent.com/fw876/helloworld/master/xray-core/Makefile -O  ${path}/lede/feeds/helloworld/xray-core/Makefile >/dev/null 2>&1
+new_ssr=`cat new_ssr`
+#判断old_ssr是否存在，不存在创建
+if [ ! -f "old_ssr" ]; then
+  echo "old_ssr被删除正在创建！"
+  sleep 0.1
+  echo $new_ssr > old_ssr
+fi
+sleep 0.1
+old_ssr=`cat old_ssr`
+if [ "$new_ssr" = "$old_ssr" ]; then
+	echo "no_update" > ${path}/nossr
+else
+	echo "update" > ${path}/nossr
+	echo $new_ssr > old_ssr
+fi
+echo
 ##xray
 #由于源码xray位置改变，需要加入一个判断
-if [ ! -d  "${path}/lede/feeds/helloworld/xray" ]; then
+if [ ! -d  "${path}/lede/feeds/helloworld/xray-core" ]; then
 	clear
 	echo
 	echo "正在更新feeds源，请稍后…"
 	cd ${path}/lede && ./scripts/feeds update -a >/dev/null 2>&1 && ./scripts/feeds install -a >/dev/null 2>&1
 	cd ${path}
 fi
-clear
 echo
-echo "脚本正在运行中…"
 if [ ! -d  "xray_update" ]; then
 	echo "xray_update文件夹不存在，准备创建…"
 	mkdir -p ${path}/xray_update
-else
-	count=`ls ${path}/xray_update`
-	if [ "$count" > "0" ]; then  #判断文件夹是否为0,否则git拉去xray源码
-		git -C ${path}/xray_update pull >/dev/null 2>&1
-		git -C ${path}/xray_update rev-parse HEAD > ${path}/new_xray
-	else
-		git clone https://github.com/XTLS/Xray-core.git ${path}/xray_update #后面指定目录
-		git -C ${path}/xray_update pull >/dev/null 2>&1
-		git -C ${path}/xray_update rev-parse HEAD > ${path}/new_xray
-	fi
-fi
-echo
-new_xray=`cat new_xray`
-echo
-##智能判断PKG_VERSION项目的最新值##
-cat ${path}/xray_update/core/core.go > ${path}/PKG_VERSION
-grep "version  =" ${path}/PKG_VERSION > ${path}/PKG_VERSION1
-cat  ${path}/PKG_VERSION1 | cut -d \" -f 2 > ${path}/PKG_VERSION
-new_pkg_version=`cat ${path}/PKG_VERSION`
-grep "PKG_VERSION:=" ${path}/lede/feeds/helloworld/xray/Makefile > ${path}/PKG_VERSION2
-cat  ${path}/PKG_VERSION2 | cut -d = -f 2 > ${path}/PKG_VERSION3
-old_pkg_version=`cat ${path}/PKG_VERSION3`
-if [ "$new_pkg_version" != "$old_pkg_version" ]; then
-	echo "xray有新版本号，正在替换最新的版本号…"
-	sed -i "s/.*PKG_VERSION:.*/PKG_VERSION:=$new_pkg_version/" ${path}/lede/feeds/helloworld/xray/Makefile
-fi
-rm -rf ${path}/PKG_VERSION*
-echo
-#判断Makefile是否为源码版，如果是这修改为以git头更新的文件
-grep "PKG_SOURCE_VERSION:=" ${path}/lede/feeds/helloworld/xray/Makefile > ${path}/jud_Makefile
-if [ -s ${path}/jud_Makefile ]; then # -s 判断文件长度是否不为0，为0说明Makefile是源码版，需修改
-clear
-echo
-echo "脚本正在努力工作中，请稍微…"
-echo
-else
-clear
-echo
-echo "Makefile正在被脚本修改…"
-sleep 0.1
-echo
-sed -i 's/PKG_RELEASE:=1/PKG_RELEASE:=2/' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_BUILD_DIR:=$(BUILD_DIR)\/Xray-core-$(PKG_VERSION)/#PKG_BUILD_DIR:=$(BUILD_DIR)\/Xray-core-$(PKG_VERSION)/' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_SOURCE:=xray-core-$(PKG_VERSION).tar.gz/#PKG_SOURCE:=xray-core-$(PKG_VERSION).tar.gz/' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_SOURCE_URL:=https:\/\/codeload.github.com\/XTLS\/xray-core\/tar.gz\/v$(PKG_VERSION)?/#PKG_SOURCE_URL:=https:\/\/codeload.github.com\/XTLS\/xray-core\/tar.gz\/v$(PKG_VERSION)?/' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_HASH:=/#PKG_HASH:=/' ${path}/lede/feeds/helloworld/xray/Makefile
-#然后插入自定义的内容
-sed -i '18 a PKG_SOURCE_PROTO:=git' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i '19 a PKG_SOURCE_URL:=https://github.com/XTLS/xray-core.git' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i '20 a PKG_SOURCE_VERSION:=7da97635b28bfa7296fe79bbe7cd804a684317d9' ${path}/lede/feeds/helloworld/xray/Makefile
-sed -i '21 a PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz' ${path}/lede/feeds/helloworld/xray/Makefile
-fi
-rm -rf jud_Makefile
-echo
-##智能判断PKG_VERSION项目的最新值##
-echo
-#判断old_xray是否存在，不存在创建
-if [ ! -f "old_xray" ]; then
-  echo "old_xray被删除正在创建！"
-  sleep 0.1
-  echo $new_xray > old_xray
-fi
-sleep 0.1
-old_xray=`cat old_xray`
-#有xray更新就替换最新的commit分支id
-if [ "$new_xray" = "$old_xray" ]; then
-	echo "no_update" > ${path}/noxray
-else
-	echo "update" > ${path}/noxray
-	sleep 1
-	#替换最新的md5值 sed要使用""才会应用变量
-	sed -i "s/.*PKG_SOURCE_VERSION:.*/PKG_SOURCE_VERSION:=$new_xray/" ${path}/lede/feeds/helloworld/xray/Makefile
-	echo $new_xray > old_xray
 fi
 echo
 ##passwall
@@ -862,25 +793,6 @@ if [ "$new_passw" = "$old_passw" ]; then
 else
 	echo "update" > ${path}/nopassw
 	echo $new_passw > old_passw
-fi
-echo
-##ssr+
-git -C ${path}/lede/feeds/helloworld pull >/dev/null 2>&1
-git -C ${path}/lede/feeds/helloworld rev-parse HEAD > new_ssr
-new_ssr=`cat new_ssr`
-#判断old_ssr是否存在，不存在创建
-if [ ! -f "old_ssr" ]; then
-  echo "old_ssr被删除正在创建！"
-  sleep 0.1
-  echo $new_ssr > old_ssr
-fi
-sleep 0.1
-old_ssr=`cat old_ssr`
-if [ "$new_ssr" = "$old_ssr" ]; then
-	echo "no_update" > ${path}/nossr
-else
-	echo "update" > ${path}/nossr
-	echo $new_ssr > old_ssr
 fi
 echo
 ##openclash
@@ -917,17 +829,6 @@ if [ -s  "${path}/wget/zzz-default-settings" ]; then
 	if [ "${new_DISTRIB_REVISION}_dev_Len yu" != "${old_DISTRIB_REVISION}" ]; then #版本号相等且带_dev_Len yu的情况，则不变，因此要不等于才动作；
 		if [ "${new_DISTRIB_REVISION}" = "${old_DISTRIB_REVISION}" ]; then #版本号相等不带_dev_Len yu 的情况；
 			sed -i "s/${old_DISTRIB_REVISION}/${new_DISTRIB_REVISION}_dev_Len yu/"  ${path}/lede/package/lean/default-settings/files/zzz-default-settings
-		fi
-		echo
-		if [ "${new_DISTRIB_REVISION}" != "${old_DISTRIB_REVISION}" ]; then #版本号不同，可能带 _dev_Len yu，可能不带的情况；
-			grep "DISTRIB_REVISION=" ${path}/lede/package/lean/default-settings/files/zzz-default-settings | cut -d \_ -f 4  > ${path}/wget/DISTRIB_REVISION2
-			len_DISTRIB_REVISION=`cat ${path}/wget/DISTRIB_REVISION2`
-			#判断是否存在Len yu 后缀；
-			if [ "$len_DISTRIB_REVISION" = "Len yu" ]; then
-				sed -i "s/${old_DISTRIB_REVISION}/${new_DISTRIB_REVISION}/"  ${path}/lede/package/lean/default-settings/files/zzz-default-settings
-			else
-				sed -i "s/${old_DISTRIB_REVISION}/${new_DISTRIB_REVISION}_dev_Len yu/"  ${path}/lede/package/lean/default-settings/files/zzz-default-settings
-			fi
 		fi
 	fi
 	rm -rf ${path}/wget/DISTRIB_REVISION*
@@ -991,11 +892,11 @@ fi
 sleep 0.2
 nolede=`cat ${path}/nolede`
 noclash=`cat ${path}/noclash`
-noxray=`cat ${path}/noxray`
+#noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
 sleep 0.5
-if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
+if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
 	clear
 	echo
 	echo "发现更新，请稍后…"
@@ -1028,7 +929,7 @@ if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$noxray" = "update"
 	fi
 fi
 echo
-if [[ ("$nolede" = "no_update") && ("$noclash" = "no_update") && ("$noxray" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
+if [[ ("$nolede" = "no_update") && ("$noclash" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
 	clear
 	echo
 	echo "呃呃…检查lede/ssr+/xray/passwall/openclash源码，没有一个源码更新哟…还是稍安勿躁…"
@@ -1064,16 +965,34 @@ echo
 echo "脚本正在运行中…"
 ##openwrt
 #由于源码xray位置改变，需要加入一个判断清除必要的文件
-if [ ! -d  "${path}/openwrt/feeds/helloworld/xray" ]; then
+if [ ! -d  "${path}/openwrt/feeds/helloworld/xray-core" ]; then
 	sed -i 's/#src-git helloworld/src-git helloworld/'  ${path}/openwrt/feeds.conf.default
 	rm -rf ${path}/openwrt/package/lean/xray
 	rm -rf ${path}/openwrt/tmp
 fi
 #清理
 rm -rf ${path}/openwrt/rename.sh
+rm -rf ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings
+rm -rf ${path}/openwrt/package/base-files/files/bin/config_generate
+rm -rf ${path}/openwrt/feeds/helloworld/xray-core/Makefile
 echo
 git -C ${path}/openwrt pull >/dev/null 2>&1
 git -C ${path}/openwrt rev-parse HEAD > new_openwrt
+echo
+wget -P ${path}/openwrt/package/lean/default-settings/files https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings >/dev/null 2>&1
+echo
+wget -P ${path}/openwrt/package/base-files/files/bin https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/base-files/files/bin/config_generate -O  ${path}/openwrt/package/base-files/files/bin/config_generate >/dev/null 2>&1
+echo
+sed -i 's/192.168.1.1/192.168.1.2/g' ${path}/openwrt/package/base-files/files/bin/config_generate
+echo
+#检查文件是否下载成功；
+if [[ ( ! -s ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings) || ( ! -s ${path}/openwrt/package/base-files/files/bin/config_generate ) ]]; then # -s 判断文件长度是否不为0；
+clear
+echo
+	echo "同步下载openwrt源码出错，请检查网络问题…"
+echo
+	exit
+fi
 new_openwrt=`cat new_openwrt`
 #判断old_openwrt是否存在，不存在创建
 if [ ! -f "old_openwrt" ]; then
@@ -1091,94 +1010,40 @@ else
 	echo $new_openwrt > old_openwrt
 fi
 echo
+##ssr+
+git -C ${path}/openwrt/feeds/helloworld pull >/dev/null 2>&1
+git -C ${path}/openwrt/feeds/helloworld rev-parse HEAD > new_ssr
+#增加xray的makefile文件
+wget -P ${path}/openwrt/feeds/helloworld/xray-core https://raw.githubusercontent.com/fw876/helloworld/master/xray-core/Makefile -O  ${path}/openwrt/feeds/helloworld/xray-core/Makefile >/dev/null 2>&1
+new_ssr=`cat new_ssr`
+#判断old_ssr是否存在，不存在创建
+if [ ! -f "old_ssr" ]; then
+  echo "old_ssr被删除正在创建！"
+  sleep 0.1
+  echo $new_ssr > old_ssr
+fi
+sleep 0.1
+old_ssr=`cat old_ssr`
+if [ "$new_ssr" = "$old_ssr" ]; then
+	echo "no_update" > ${path}/nossr
+else
+	echo "update" > ${path}/nossr
+	echo $new_ssr > old_ssr
+fi
+echo
 ##xray
 #由于源码xray位置改变，需要加入一个判断
-if [ ! -d  "${path}/openwrt/feeds/helloworld/xray" ]; then
+if [ ! -d  "${path}/openwrt/feeds/helloworld/xray-core" ]; then
 	clear
 	echo
 	echo "正在更新feeds源，请稍后…"
 	cd ${path}/openwrt && ./scripts/feeds update -a >/dev/null 2>&1 && ./scripts/feeds install -a >/dev/null 2>&1
 	cd ${path}
 fi
-clear
 echo
-echo "脚本正在运行中…"
 if [ ! -d  "xray_update" ]; then
 	echo "xray_update文件夹不存在，准备创建…"
 	mkdir -p ${path}/xray_update
-else
-	count=`ls ${path}/xray_update`
-	if [ "$count" > "0" ]; then  #判断文件夹是否为0,否则git拉去xray源码
-		git -C ${path}/xray_update pull >/dev/null 2>&1
-		git -C ${path}/xray_update rev-parse HEAD > ${path}/new_xray
-	else
-		git clone https://github.com/XTLS/Xray-core.git ${path}/xray_update #后面指定目录
-		git -C ${path}/xray_update pull >/dev/null 2>&1
-		git -C ${path}/xray_update rev-parse HEAD > ${path}/new_xray
-	fi
-fi
-echo
-new_xray=`cat new_xray`
-echo
-##智能判断PKG_VERSION项目的最新值##
-cat ${path}/xray_update/core/core.go > ${path}/PKG_VERSION
-grep "version  =" ${path}/PKG_VERSION > ${path}/PKG_VERSION1
-cat  ${path}/PKG_VERSION1 | cut -d \" -f 2 > ${path}/PKG_VERSION
-new_pkg_version=`cat ${path}/PKG_VERSION`
-grep "PKG_VERSION:=" ${path}/openwrt/feeds/helloworld/xray/Makefile > ${path}/PKG_VERSION2
-cat  ${path}/PKG_VERSION2 | cut -d = -f 2 > ${path}/PKG_VERSION3
-old_pkg_version=`cat ${path}/PKG_VERSION3`
-if [ "$new_pkg_version" != "$old_pkg_version" ]; then
-	echo "xray有新版本号，正在替换最新的版本号…"
-	sed -i "s/.*PKG_VERSION:.*/PKG_VERSION:=$new_pkg_version/" ${path}/openwrt/feeds/helloworld/xray/Makefile
-fi
-rm -rf ${path}/PKG_VERSION*
-echo
-#判断Makefile是否为源码版，如果是这修改为以git头更新的文件
-grep "PKG_SOURCE_VERSION:=" ${path}/openwrt/feeds/helloworld/xray/Makefile > ${path}/jud_Makefile
-if [ -s ${path}/jud_Makefile ]; then # -s 判断文件长度是否不为0，为0说明Makefile是源码版，需修改
-clear
-echo
-echo "脚本正在努力工作中，请稍微…"
-echo
-else
-clear
-echo
-echo "Makefile正在被脚本修改…"
-sleep 0.1
-echo
-sed -i 's/PKG_RELEASE:=1/PKG_RELEASE:=2/' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_BUILD_DIR:=$(BUILD_DIR)\/Xray-core-$(PKG_VERSION)/#PKG_BUILD_DIR:=$(BUILD_DIR)\/Xray-core-$(PKG_VERSION)/' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_SOURCE:=xray-core-$(PKG_VERSION).tar.gz/#PKG_SOURCE:=xray-core-$(PKG_VERSION).tar.gz/' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_SOURCE_URL:=https:\/\/codeload.github.com\/XTLS\/xray-core\/tar.gz\/v$(PKG_VERSION)?/#PKG_SOURCE_URL:=https:\/\/codeload.github.com\/XTLS\/xray-core\/tar.gz\/v$(PKG_VERSION)?/' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_HASH:=/#PKG_HASH:=/' ${path}/openwrt/feeds/helloworld/xray/Makefile
-#然后插入自定义的内容
-sed -i '18 a PKG_SOURCE_PROTO:=git' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i '19 a PKG_SOURCE_URL:=https://github.com/XTLS/xray-core.git' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i '20 a PKG_SOURCE_VERSION:=7da97635b28bfa7296fe79bbe7cd804a684317d9' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i '21 a PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz' ${path}/openwrt/feeds/helloworld/xray/Makefile
-fi
-rm -rf jud_Makefile
-echo
-##智能判断PKG_VERSION项目的最新值##
-echo
-#判断old_xray是否存在，不存在创建
-if [ ! -f "old_xray" ]; then
-  echo "old_xray被删除正在创建！"
-  sleep 0.1
-  echo $new_xray > old_xray
-fi
-sleep 0.1
-old_xray=`cat old_xray`
-#有xray更新就替换最新的commit分支id
-if [ "$new_xray" = "$old_xray" ]; then
-	echo "no_update" > ${path}/noxray
-else
-	echo "update" > ${path}/noxray
-	sleep 1
-	#替换最新的md5值 sed要使用""才会应用变量
-	sed -i "s/.*PKG_SOURCE_VERSION:.*/PKG_SOURCE_VERSION:=$new_xray/" ${path}/openwrt/feeds/helloworld/xray/Makefile
-	echo $new_xray > old_xray
 fi
 echo
 ##passwall
@@ -1198,25 +1063,6 @@ if [ "$new_passw" = "$old_passw" ]; then
 else
 	echo "update" > ${path}/nopassw
 	echo $new_passw > old_passw
-fi
-echo
-##ssr+
-git -C ${path}/openwrt/feeds/helloworld pull >/dev/null 2>&1
-git -C ${path}/openwrt/feeds/helloworld rev-parse HEAD > new_ssr
-new_ssr=`cat new_ssr`
-#判断old_ssr是否存在，不存在创建
-if [ ! -f "old_ssr" ]; then
-  echo "old_ssr被删除正在创建！"
-  sleep 0.1
-  echo $new_ssr > old_ssr
-fi
-sleep 0.1
-old_ssr=`cat old_ssr`
-if [ "$new_ssr" = "$old_ssr" ]; then
-	echo "no_update" > ${path}/nossr
-else
-	echo "update" > ${path}/nossr
-	echo $new_ssr > old_ssr
 fi
 echo
 ##openclash
@@ -1240,7 +1086,7 @@ fi
 sleep 0.1
 ####智能判断并替换大雕openwrt版本号的变动并自定义格式####
 #下载GitHub使用raw页面，-P 指定目录 -O强制覆盖效果；
-wget -P ${path}/wget https://raw.githubusercontent.com/coolsnowwolf/openwrt/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/wget/zzz-default-settings >/dev/null 2>&1
+wget -P ${path}/wget https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/wget/zzz-default-settings >/dev/null 2>&1
 sleep 0.3
 #-s代表文件存在不为空,!将他取反
 if [ -s  "${path}/wget/zzz-default-settings" ]; then
@@ -1250,20 +1096,9 @@ if [ -s  "${path}/wget/zzz-default-settings" ]; then
 	grep "DISTRIB_REVISION=" ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings | cut -d \' -f 2 > ${path}/wget/DISTRIB_REVISION3
 	old_DISTRIB_REVISION=`cat ${path}/wget/DISTRIB_REVISION3`
 	#新旧判断是否执行替换R自定义版本…
-	if [ "${new_DISTRIB_REVISION}_sta_Len yu" != "${old_DISTRIB_REVISION}" ]; then #版本号相等且带_sta_Len yu的情况，则不变，因此要不等于才动作；
+	if [ "${new_DISTRIB_REVISION}_sta_Len yu" != "${old_DISTRIB_REVISION}" ]; then #版本号相等且带_dev_Len yu的情况，则不变，因此要不等于才动作；
 		if [ "${new_DISTRIB_REVISION}" = "${old_DISTRIB_REVISION}" ]; then #版本号相等不带_sta_Len yu 的情况；
 			sed -i "s/${old_DISTRIB_REVISION}/${new_DISTRIB_REVISION}_sta_Len yu/"  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings
-		fi
-		echo
-		if [ "${new_DISTRIB_REVISION}" != "${old_DISTRIB_REVISION}" ]; then #版本号不同，可能带 _sta_Len yu，可能不带的情况；
-			grep "DISTRIB_REVISION=" ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings | cut -d \_ -f 4  > ${path}/wget/DISTRIB_REVISION2
-			len_DISTRIB_REVISION=`cat ${path}/wget/DISTRIB_REVISION2`
-			#判断是否存在Len yu 后缀；
-			if [ "$len_DISTRIB_REVISION" = "Len yu" ]; then
-				sed -i "s/${old_DISTRIB_REVISION}/${new_DISTRIB_REVISION}/"  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings
-			else
-				sed -i "s/${old_DISTRIB_REVISION}/${new_DISTRIB_REVISION}_sta_Len yu/"  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings
-			fi
 		fi
 	fi
 	rm -rf ${path}/wget/DISTRIB_REVISION*
@@ -1327,11 +1162,11 @@ fi
 sleep 0.2
 noopenwrt=`cat ${path}/noopenwrt`
 noclash=`cat ${path}/noclash`
-noxray=`cat ${path}/noxray`
+#noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
 sleep 0.5
-if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
+if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
 	clear
 	echo
 	echo "发现更新，请稍后…"
@@ -1364,7 +1199,7 @@ if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$noxray" = "upda
 	fi
 fi
 echo
-if [[ ("$noopenwrt" = "no_update") && ("$noclash" = "no_update") && ("$noxray" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
+if [[ ("$noopenwrt" = "no_update") && ("$noclash" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
 	clear
 	echo
 	echo "呃呃…检查openwrt/ssr+/xray/passwall/openclash源码，没有一个源码更新…开始进入强制更新模式…"
@@ -1417,16 +1252,34 @@ echo
 echo "脚本正在运行中…"
 ##openwrt
 #由于源码xray位置改变，需要加入一个判断清除必要的文件
-if [ ! -d  "${path}/openwrt/feeds/helloworld/xray" ]; then
+if [ ! -d  "${path}/openwrt/feeds/helloworld/xray-core" ]; then
 	sed -i 's/#src-git helloworld/src-git helloworld/'  ${path}/openwrt/feeds.conf.default
 	rm -rf ${path}/openwrt/package/lean/xray
 	rm -rf ${path}/openwrt/tmp
 fi
 #清理
 rm -rf ${path}/openwrt/rename.sh
+rm -rf ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings
+rm -rf ${path}/openwrt/package/base-files/files/bin/config_generate
+rm -rf ${path}/openwrt/feeds/helloworld/xray-core/Makefile
 echo
 git -C ${path}/openwrt pull >/dev/null 2>&1
 git -C ${path}/openwrt rev-parse HEAD > new_openwrt
+echo
+wget -P ${path}/openwrt/package/lean/default-settings/files https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings >/dev/null 2>&1
+echo
+wget -P ${path}/openwrt/package/base-files/files/bin https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/base-files/files/bin/config_generate -O  ${path}/openwrt/package/base-files/files/bin/config_generate >/dev/null 2>&1
+echo
+sed -i 's/192.168.1.1/192.168.1.2/g' ${path}/openwrt/package/base-files/files/bin/config_generate
+echo
+#检查文件是否下载成功；
+if [[ ( ! -s ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings) || ( ! -s ${path}/openwrt/package/base-files/files/bin/config_generate ) ]]; then # -s 判断文件长度是否不为0；
+clear
+echo
+	echo "同步下载openwrt源码出错，请检查网络问题…"
+echo
+	exit
+fi
 new_openwrt=`cat new_openwrt`
 #判断old_openwrt是否存在，不存在创建
 if [ ! -f "old_openwrt" ]; then
@@ -1444,94 +1297,40 @@ else
 	echo $new_openwrt > old_openwrt
 fi
 echo
+##ssr+
+git -C ${path}/openwrt/feeds/helloworld pull >/dev/null 2>&1
+git -C ${path}/openwrt/feeds/helloworld rev-parse HEAD > new_ssr
+#增加xray的makefile文件
+wget -P ${path}/openwrt/feeds/helloworld/xray-core https://raw.githubusercontent.com/fw876/helloworld/master/xray-core/Makefile -O  ${path}/openwrt/feeds/helloworld/xray-core/Makefile >/dev/null 2>&1
+new_ssr=`cat new_ssr`
+#判断old_ssr是否存在，不存在创建
+if [ ! -f "old_ssr" ]; then
+  echo "old_ssr被删除正在创建！"
+  sleep 0.1
+  echo $new_ssr > old_ssr
+fi
+sleep 0.1
+old_ssr=`cat old_ssr`
+if [ "$new_ssr" = "$old_ssr" ]; then
+	echo "no_update" > ${path}/nossr
+else
+	echo "update" > ${path}/nossr
+	echo $new_ssr > old_ssr
+fi
+echo
 ##xray
 #由于源码xray位置改变，需要加入一个判断
-if [ ! -d  "${path}/openwrt/feeds/helloworld/xray" ]; then
+if [ ! -d  "${path}/openwrt/feeds/helloworld/xray-core" ]; then
 	clear
 	echo
 	echo "正在更新feeds源，请稍后…"
 	cd ${path}/openwrt && ./scripts/feeds update -a >/dev/null 2>&1 && ./scripts/feeds install -a >/dev/null 2>&1
 	cd ${path}
 fi
-clear
 echo
-echo "脚本正在运行中…"
 if [ ! -d  "xray_update" ]; then
 	echo "xray_update文件夹不存在，准备创建…"
 	mkdir -p ${path}/xray_update
-else
-	count=`ls ${path}/xray_update`
-	if [ "$count" > "0" ]; then  #判断文件夹是否为0,否则git拉去xray源码
-		git -C ${path}/xray_update pull >/dev/null 2>&1
-		git -C ${path}/xray_update rev-parse HEAD > ${path}/new_xray
-	else
-		git clone https://github.com/XTLS/Xray-core.git ${path}/xray_update #后面指定目录
-		git -C ${path}/xray_update pull >/dev/null 2>&1
-		git -C ${path}/xray_update rev-parse HEAD > ${path}/new_xray
-	fi
-fi
-echo
-new_xray=`cat new_xray`
-echo
-##智能判断PKG_VERSION项目的最新值##
-cat ${path}/xray_update/core/core.go > ${path}/PKG_VERSION
-grep "version  =" ${path}/PKG_VERSION > ${path}/PKG_VERSION1
-cat  ${path}/PKG_VERSION1 | cut -d \" -f 2 > ${path}/PKG_VERSION
-new_pkg_version=`cat ${path}/PKG_VERSION`
-grep "PKG_VERSION:=" ${path}/openwrt/feeds/helloworld/xray/Makefile > ${path}/PKG_VERSION2
-cat  ${path}/PKG_VERSION2 | cut -d = -f 2 > ${path}/PKG_VERSION3
-old_pkg_version=`cat ${path}/PKG_VERSION3`
-if [ "$new_pkg_version" != "$old_pkg_version" ]; then
-	echo "xray有新版本号，正在替换最新的版本号…"
-	sed -i "s/.*PKG_VERSION:.*/PKG_VERSION:=$new_pkg_version/" ${path}/openwrt/feeds/helloworld/xray/Makefile
-fi
-rm -rf ${path}/PKG_VERSION*
-echo
-#判断Makefile是否为源码版，如果是这修改为以git头更新的文件
-grep "PKG_SOURCE_VERSION:=" ${path}/openwrt/feeds/helloworld/xray/Makefile > ${path}/jud_Makefile
-if [ -s ${path}/jud_Makefile ]; then # -s 判断文件长度是否不为0，为0说明Makefile是源码版，需修改
-clear
-echo
-echo "脚本正在努力工作中，请稍微…"
-echo
-else
-clear
-echo
-echo "Makefile正在被脚本修改…"
-sleep 0.1
-echo
-sed -i 's/PKG_RELEASE:=1/PKG_RELEASE:=2/' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_BUILD_DIR:=$(BUILD_DIR)\/Xray-core-$(PKG_VERSION)/#PKG_BUILD_DIR:=$(BUILD_DIR)\/Xray-core-$(PKG_VERSION)/' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_SOURCE:=xray-core-$(PKG_VERSION).tar.gz/#PKG_SOURCE:=xray-core-$(PKG_VERSION).tar.gz/' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_SOURCE_URL:=https:\/\/codeload.github.com\/XTLS\/xray-core\/tar.gz\/v$(PKG_VERSION)?/#PKG_SOURCE_URL:=https:\/\/codeload.github.com\/XTLS\/xray-core\/tar.gz\/v$(PKG_VERSION)?/' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i 's/PKG_HASH:=/#PKG_HASH:=/' ${path}/openwrt/feeds/helloworld/xray/Makefile
-#然后插入自定义的内容
-sed -i '18 a PKG_SOURCE_PROTO:=git' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i '19 a PKG_SOURCE_URL:=https://github.com/XTLS/xray-core.git' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i '20 a PKG_SOURCE_VERSION:=7da97635b28bfa7296fe79bbe7cd804a684317d9' ${path}/openwrt/feeds/helloworld/xray/Makefile
-sed -i '21 a PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz' ${path}/openwrt/feeds/helloworld/xray/Makefile
-fi
-rm -rf jud_Makefile
-echo
-##智能判断PKG_VERSION项目的最新值##
-echo
-#判断old_xray是否存在，不存在创建
-if [ ! -f "old_xray" ]; then
-  echo "old_xray被删除正在创建！"
-  sleep 0.1
-  echo $new_xray > old_xray
-fi
-sleep 0.1
-old_xray=`cat old_xray`
-#有xray更新就替换最新的commit分支id
-if [ "$new_xray" = "$old_xray" ]; then
-	echo "no_update" > ${path}/noxray
-else
-	echo "update" > ${path}/noxray
-	sleep 1
-	#替换最新的md5值 sed要使用""才会应用变量
-	sed -i "s/.*PKG_SOURCE_VERSION:.*/PKG_SOURCE_VERSION:=$new_xray/" ${path}/openwrt/feeds/helloworld/xray/Makefile
-	echo $new_xray > old_xray
 fi
 echo
 ##passwall
@@ -1551,25 +1350,6 @@ if [ "$new_passw" = "$old_passw" ]; then
 else
 	echo "update" > ${path}/nopassw
 	echo $new_passw > old_passw
-fi
-echo
-##ssr+
-git -C ${path}/openwrt/feeds/helloworld pull >/dev/null 2>&1
-git -C ${path}/openwrt/feeds/helloworld rev-parse HEAD > new_ssr
-new_ssr=`cat new_ssr`
-#判断old_ssr是否存在，不存在创建
-if [ ! -f "old_ssr" ]; then
-  echo "old_ssr被删除正在创建！"
-  sleep 0.1
-  echo $new_ssr > old_ssr
-fi
-sleep 0.1
-old_ssr=`cat old_ssr`
-if [ "$new_ssr" = "$old_ssr" ]; then
-	echo "no_update" > ${path}/nossr
-else
-	echo "update" > ${path}/nossr
-	echo $new_ssr > old_ssr
 fi
 echo
 ##openclash
@@ -1593,7 +1373,7 @@ fi
 sleep 0.1
 ####智能判断并替换大雕openwrt版本号的变动并自定义格式####
 #下载GitHub使用raw页面，-P 指定目录 -O强制覆盖效果；
-wget -P ${path}/wget https://raw.githubusercontent.com/coolsnowwolf/openwrt/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/wget/zzz-default-settings >/dev/null 2>&1
+wget -P ${path}/wget https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/wget/zzz-default-settings >/dev/null 2>&1
 sleep 0.3
 #-s代表文件存在不为空,!将他取反
 if [ -s  "${path}/wget/zzz-default-settings" ]; then
@@ -1603,20 +1383,9 @@ if [ -s  "${path}/wget/zzz-default-settings" ]; then
 	grep "DISTRIB_REVISION=" ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings | cut -d \' -f 2 > ${path}/wget/DISTRIB_REVISION3
 	old_DISTRIB_REVISION=`cat ${path}/wget/DISTRIB_REVISION3`
 	#新旧判断是否执行替换R自定义版本…
-	if [ "${new_DISTRIB_REVISION}_sta_Len yu" != "${old_DISTRIB_REVISION}" ]; then #版本号相等且带_sta_Len yu的情况，则不变，因此要不等于才动作；
+	if [ "${new_DISTRIB_REVISION}_sta_Len yu" != "${old_DISTRIB_REVISION}" ]; then #版本号相等且带_dev_Len yu的情况，则不变，因此要不等于才动作；
 		if [ "${new_DISTRIB_REVISION}" = "${old_DISTRIB_REVISION}" ]; then #版本号相等不带_sta_Len yu 的情况；
 			sed -i "s/${old_DISTRIB_REVISION}/${new_DISTRIB_REVISION}_sta_Len yu/"  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings
-		fi
-		echo
-		if [ "${new_DISTRIB_REVISION}" != "${old_DISTRIB_REVISION}" ]; then #版本号不同，可能带 _sta_Len yu，可能不带的情况；
-			grep "DISTRIB_REVISION=" ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings | cut -d \_ -f 4  > ${path}/wget/DISTRIB_REVISION2
-			len_DISTRIB_REVISION=`cat ${path}/wget/DISTRIB_REVISION2`
-			#判断是否存在Len yu 后缀；
-			if [ "$len_DISTRIB_REVISION" = "Len yu" ]; then
-				sed -i "s/${old_DISTRIB_REVISION}/${new_DISTRIB_REVISION}/"  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings
-			else
-				sed -i "s/${old_DISTRIB_REVISION}/${new_DISTRIB_REVISION}_sta_Len yu/"  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings
-			fi
 		fi
 	fi
 	rm -rf ${path}/wget/DISTRIB_REVISION*
@@ -1680,11 +1449,11 @@ fi
 sleep 0.2
 noopenwrt=`cat ${path}/noopenwrt`
 noclash=`cat ${path}/noclash`
-noxray=`cat ${path}/noxray`
+#noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
 sleep 0.5
-if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
+if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
 	clear
 	echo
 	echo "发现更新，请稍后…"
@@ -1717,7 +1486,7 @@ if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$noxray" = "upda
 	fi
 fi
 echo
-if [[ ("$noopenwrt" = "no_update") && ("$noclash" = "no_update") && ("$noxray" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
+if [[ ("$noopenwrt" = "no_update") && ("$noclash" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
 	clear
 	echo
 	echo "呃呃…检查openwrt/ssr+/xray/passwall/openclash源码，没有一个源码更新哟…还是稍安勿躁…"
