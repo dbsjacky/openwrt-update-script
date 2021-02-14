@@ -379,7 +379,7 @@ case $num2 in
 
 	wget -P ${path}/wget https://raw.githubusercontent.com/Lenyu2020/openwrt_update/main/file/sta_diff -O  ${path}/wget/sta_diff >/dev/null 2>&1
 	sleep 0.3
-	mv ${path}/wget/sta_diff ${path}/lede/.config
+	mv ${path}/wget/sta_diff ${path}/openwrt/.config
 	echo
 	_sta_dl_downlaond
 	;;
@@ -1504,4 +1504,3 @@ menu
 }
 _sys_judg
 menu
-
