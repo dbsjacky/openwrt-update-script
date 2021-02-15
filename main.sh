@@ -499,15 +499,24 @@ fi
 wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
 #sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
 new_xray=`cat ${path}/xray_lastest`
+if [ ! -f ${path}/xray_update/xray_version ]; then
+	echo $new_xray > ${path}/xray_update/xray_version
+fi
+old_xray_ver=`cat ${path}/xray_update/xray_version`
+if [ "$new_xray" != "$old_xray_ver" ]; then
+	echo $new_xray > ${path}/xray_update/xray_version
+	echo "update" > ${path}/noxray
+else
+	echo "no_update" > ${path}/noxray
+fi
+echo
 rm -rf ${path}/xray_lastest
 #本地版本号；
 grep "PKG_VERSION:=" ${path}/lede/feeds/helloworld/xray-core/Makefile | awk -F "=" '{print $2}' > ${path}/jud_Makefile
 old_xray=`cat ${path}/jud_Makefile`
 rm -rf ${path}/jud_Makefile
 echo
-if [ "$new_xray" = "$old_xray" ]; then
-	echo "no_update" > ${path}/noxray
-else
+if [ "$new_xray" != "$old_xray" ]; then
 	sed -i "s/.*PKG_VERSION:=.*/PKG_VERSION:=$new_xray/" ${path}/lede/feeds/helloworld/xray-core/Makefile
 	#计算xray最新发布版本源码哈希值
 	PKG_SOURCE_URL=https://codeload.github.com/XTLS/xray-core/tar.gz/v${new_xray}?
@@ -811,15 +820,24 @@ fi
 wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
 #sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
 new_xray=`cat ${path}/xray_lastest`
+if [ ! -f ${path}/xray_update/xray_version ]; then
+	echo $new_xray > ${path}/xray_update/xray_version
+fi
+old_xray_ver=`cat ${path}/xray_update/xray_version`
+if [ "$new_xray" != "$old_xray_ver" ]; then
+	echo $new_xray > ${path}/xray_update/xray_version
+	echo "update" > ${path}/noxray
+else
+	echo "no_update" > ${path}/noxray
+fi
+echo
 rm -rf ${path}/xray_lastest
 #本地版本号；
 grep "PKG_VERSION:=" ${path}/lede/feeds/helloworld/xray-core/Makefile | awk -F "=" '{print $2}' > ${path}/jud_Makefile
 old_xray=`cat ${path}/jud_Makefile`
 rm -rf ${path}/jud_Makefile
 echo
-if [ "$new_xray" = "$old_xray" ]; then
-	echo "no_update" > ${path}/noxray
-else
+if [ "$new_xray" != "$old_xray" ]; then
 	sed -i "s/.*PKG_VERSION:=.*/PKG_VERSION:=$new_xray/" ${path}/lede/feeds/helloworld/xray-core/Makefile
 	#计算xray最新发布版本源码哈希值
 	PKG_SOURCE_URL=https://codeload.github.com/XTLS/xray-core/tar.gz/v${new_xray}?
@@ -833,8 +851,8 @@ else
 	rm -rf ${path}/xray_update/xray-core_sha256sum
 	rm -rf ${path}/xray_update/xray-core.tar.gz
 	sed -i "s/.*PKG_HASH:=.*/PKG_HASH:=$xray_sha256sum/" ${path}/lede/feeds/helloworld/xray-core/Makefile
-	echo "update" > ${path}/noxray
 fi
+echo
 ##passwall
 git -C ${path}/lede/feeds/passwall pull >/dev/null 2>&1
 git -C ${path}/lede/feeds/passwall rev-parse HEAD > new_passw
@@ -1107,15 +1125,24 @@ fi
 wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
 #sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
 new_xray=`cat ${path}/xray_lastest`
+if [ ! -f ${path}/xray_update/xray_version ]; then
+	echo $new_xray > ${path}/xray_update/xray_version
+fi
+old_xray_ver=`cat ${path}/xray_update/xray_version`
+if [ "$new_xray" != "$old_xray_ver" ]; then
+	echo $new_xray > ${path}/xray_update/xray_version
+	echo "update" > ${path}/noxray
+else
+	echo "no_update" > ${path}/noxray
+fi
+echo
 rm -rf ${path}/xray_lastest
 #本地版本号；
 grep "PKG_VERSION:=" ${path}/openwrt/feeds/helloworld/xray-core/Makefile | awk -F "=" '{print $2}' > ${path}/jud_Makefile
 old_xray=`cat ${path}/jud_Makefile`
 rm -rf ${path}/jud_Makefile
 echo
-if [ "$new_xray" = "$old_xray" ]; then
-	echo "no_update" > ${path}/noxray
-else
+if [ "$new_xray" != "$old_xray" ]; then
 	sed -i "s/.*PKG_VERSION:=.*/PKG_VERSION:=$new_xray/" ${path}/openwrt/feeds/helloworld/xray-core/Makefile
 	#计算xray最新发布版本源码哈希值
 	PKG_SOURCE_URL=https://codeload.github.com/XTLS/xray-core/tar.gz/v${new_xray}?
@@ -1420,15 +1447,24 @@ fi
 wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
 #sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
 new_xray=`cat ${path}/xray_lastest`
+if [ ! -f ${path}/xray_update/xray_version ]; then
+	echo $new_xray > ${path}/xray_update/xray_version
+fi
+old_xray_ver=`cat ${path}/xray_update/xray_version`
+if [ "$new_xray" != "$old_xray_ver" ]; then
+	echo $new_xray > ${path}/xray_update/xray_version
+	echo "update" > ${path}/noxray
+else
+	echo "no_update" > ${path}/noxray
+fi
+echo
 rm -rf ${path}/xray_lastest
 #本地版本号；
 grep "PKG_VERSION:=" ${path}/openwrt/feeds/helloworld/xray-core/Makefile | awk -F "=" '{print $2}' > ${path}/jud_Makefile
 old_xray=`cat ${path}/jud_Makefile`
 rm -rf ${path}/jud_Makefile
 echo
-if [ "$new_xray" = "$old_xray" ]; then
-	echo "no_update" > ${path}/noxray
-else
+if [ "$new_xray" != "$old_xray" ]; then
 	sed -i "s/.*PKG_VERSION:=.*/PKG_VERSION:=$new_xray/" ${path}/openwrt/feeds/helloworld/xray-core/Makefile
 	#计算xray最新发布版本源码哈希值
 	PKG_SOURCE_URL=https://codeload.github.com/XTLS/xray-core/tar.gz/v${new_xray}?
