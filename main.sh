@@ -495,7 +495,7 @@ echo
 if [ ! -d  "xray_update" ]; then
 	mkdir -p ${path}/xray_update
 fi
-sed -i 's/core.codename=OpenWrt/core.codename=lenyu/g' ${path}/lede/feeds/helloworld/xray-core/Makefile
+sed -i 's/core.build=OpenWrt/core.build=lenyu/g' ${path}/lede/feeds/helloworld/xray-core/Makefile
 #获取xray-core/Makefile最新的版本号信息并修改；
 wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
 #sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
@@ -817,7 +817,7 @@ echo
 if [ ! -d  "xray_update" ]; then
 	mkdir -p ${path}/xray_update
 fi
-sed -i 's/core.codename=OpenWrt/core.codename=lenyu/g' ${path}/lede/feeds/helloworld/xray-core/Makefile
+sed -i 's/core.build=OpenWrt/core.build=lenyu/g' ${path}/lede/feeds/helloworld/xray-core/Makefile
 #获取xray-core/Makefile最新的版本号信息并修改；
 wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
 #sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
@@ -1123,7 +1123,7 @@ echo
 if [ ! -d  "xray_update" ]; then
 	mkdir -p ${path}/xray_update
 fi
-sed -i 's/core.codename=OpenWrt/core.codename=lenyu/g' ${path}/openwrt/feeds/helloworld/xray-core/Makefile
+sed -i 's/core.build=OpenWrt/core.build=lenyu/g' ${path}/openwrt/feeds/helloworld/xray-core/Makefile
 #获取xray-core/Makefile最新的版本号信息并修改；
 wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
 #sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
@@ -1446,7 +1446,7 @@ echo
 if [ ! -d  "xray_update" ]; then
 	mkdir -p ${path}/xray_update
 fi
-sed -i 's/core.codename=OpenWrt/core.codename=lenyu/g' ${path}/openwrt/feeds/helloworld/xray-core/Makefile
+sed -i 's/core.build=OpenWrt/core.build=lenyu/g' ${path}/openwrt/feeds/helloworld/xray-core/Makefile
 #获取xray-core/Makefile最新的版本号信息并修改；
 wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
 #sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
