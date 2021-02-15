@@ -111,7 +111,7 @@ cat <<EOF
 
 Openwrt Firmware One-click Update Compilation Script
 
-Script By Lenyu	Version v2.3.0
+Script By Lenyu	Version v2.3.1
 
 -----------------------------------
 >>>菜单主页:
@@ -289,7 +289,7 @@ case $num1 in
 	rm -rf ${path}/wget/gdlink
 	rm -rf ${path}/*dl.tar.gz
 	echo
-	echo -e "\033[32m >>>开发版-源码初始化完成…-> \033[0m"
+	echo -e "\033[32m >>>稳定版-源码初始化完成…-> \033[0m"
 	echo
 	read -n 1 -p  "请回车，返回主菜单操作…"
 	echo
@@ -332,7 +332,7 @@ case $num2 in
 		_lede_code
 	else
 		cd ${path}/lede
-		sed -i 's/#src-git helloworld/src-git helloworld/'  ${path}/lede/feeds.conf.default
+		sed -i 's/#src-git helloworld/src-git helloworld/g'  ${path}/lede/feeds.conf.default
 		sed -i '$a src-git passwall https://github.com/xiaorouji/openwrt-passwall' ${path}/lede/feeds.conf.default
 		sed -i 's/192.168.1.1/192.168.1.2/g' ${path}/lede/package/base-files/files/bin/config_generate
 	fi
@@ -365,7 +365,7 @@ case $num2 in
 		_lede_code
 	else
 		cd ${path}/openwrt
-		sed -i 's/#src-git helloworld/src-git helloworld/'  ${path}/openwrt/feeds.conf.default
+		sed -i 's/#src-git helloworld/src-git helloworld/g'  ${path}/openwrt/feeds.conf.default
 		sed -i '$a src-git passwall https://github.com/xiaorouji/openwrt-passwall' ${path}/openwrt/feeds.conf.default
 		sed -i 's/192.168.1.1/192.168.1.2/g' ${path}/openwrt/package/base-files/files/bin/config_generate
 	fi
@@ -417,7 +417,7 @@ echo "脚本正在运行中…"
 ##lede
 #由于源码xray位置改变，需要加入一个判断清除必要的文件
 if [ ! -d  "${path}/lede/feeds/helloworld/xray-core" ]; then
-	sed -i 's/#src-git helloworld/src-git helloworld/'  ${path}/lede/feeds.conf.default
+	sed -i 's/#src-git helloworld/src-git helloworld/g'  ${path}/lede/feeds.conf.default
 	rm -rf ${path}/lede/package/lean/xray
 	rm -rf ${path}/lede/tmp
 fi
@@ -729,7 +729,7 @@ echo "脚本正在运行中…"
 ##lede
 #由于源码xray位置改变，需要加入一个判断清除必要的文件
 if [ ! -d  "${path}/lede/feeds/helloworld/xray-core" ]; then
-	sed -i 's/#src-git helloworld/src-git helloworld/'  ${path}/lede/feeds.conf.default
+	sed -i 's/#src-git helloworld/src-git helloworld/g'  ${path}/lede/feeds.conf.default
 	rm -rf ${path}/lede/package/lean/xray
 	rm -rf ${path}/lede/tmp
 fi
@@ -1025,7 +1025,7 @@ echo "脚本正在运行中…"
 ##openwrt
 #由于源码xray位置改变，需要加入一个判断清除必要的文件
 if [ ! -d  "${path}/openwrt/feeds/helloworld/xray-core" ]; then
-	sed -i 's/#src-git helloworld/src-git helloworld/'  ${path}/openwrt/feeds.conf.default
+	sed -i 's/#src-git helloworld/src-git helloworld/g'  ${path}/openwrt/feeds.conf.default
 	rm -rf ${path}/openwrt/package/lean/xray
 	rm -rf ${path}/openwrt/tmp
 fi
@@ -1038,7 +1038,7 @@ echo
 git -C ${path}/openwrt pull >/dev/null 2>&1
 git -C ${path}/openwrt rev-parse HEAD > new_openwrt
 echo
-wget -P ${path}/openwrt/package/lean/default-settings/files https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings >/dev/null 2>&1
+wget -P ${path}/openwrt/package/lean/default-settings/files https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/lean/default-settings/files/zzz-default-settings -O  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings >/dev/null 2>&1
 echo
 wget -P ${path}/openwrt/package/base-files/files/bin https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/base-files/files/bin/config_generate -O  ${path}/openwrt/package/base-files/files/bin/config_generate >/dev/null 2>&1
 echo
@@ -1171,7 +1171,7 @@ fi
 sleep 0.1
 ####智能判断并替换大雕openwrt版本号的变动并自定义格式####
 #下载GitHub使用raw页面，-P 指定目录 -O强制覆盖效果；
-wget -P ${path}/wget https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/wget/zzz-default-settings >/dev/null 2>&1
+wget -P ${path}/wget https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/lean/default-settings/files/zzz-default-settings -O  ${path}/wget/zzz-default-settings >/dev/null 2>&1
 sleep 0.3
 #-s代表文件存在不为空,!将他取反
 if [ -s  "${path}/wget/zzz-default-settings" ]; then
@@ -1338,7 +1338,7 @@ echo "脚本正在运行中…"
 ##openwrt
 #由于源码xray位置改变，需要加入一个判断清除必要的文件
 if [ ! -d  "${path}/openwrt/feeds/helloworld/xray-core" ]; then
-	sed -i 's/#src-git helloworld/src-git helloworld/'  ${path}/openwrt/feeds.conf.default
+	sed -i 's/#src-git helloworld/src-git helloworld/g'  ${path}/openwrt/feeds.conf.default
 	rm -rf ${path}/openwrt/package/lean/xray
 	rm -rf ${path}/openwrt/tmp
 fi
@@ -1351,7 +1351,7 @@ echo
 git -C ${path}/openwrt pull >/dev/null 2>&1
 git -C ${path}/openwrt rev-parse HEAD > new_openwrt
 echo
-wget -P ${path}/openwrt/package/lean/default-settings/files https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings >/dev/null 2>&1
+wget -P ${path}/openwrt/package/lean/default-settings/files https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/lean/default-settings/files/zzz-default-settings -O  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings >/dev/null 2>&1
 echo
 wget -P ${path}/openwrt/package/base-files/files/bin https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/base-files/files/bin/config_generate -O  ${path}/openwrt/package/base-files/files/bin/config_generate >/dev/null 2>&1
 echo
@@ -1484,7 +1484,7 @@ fi
 sleep 0.1
 ####智能判断并替换大雕openwrt版本号的变动并自定义格式####
 #下载GitHub使用raw页面，-P 指定目录 -O强制覆盖效果；
-wget -P ${path}/wget https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/wget/zzz-default-settings >/dev/null 2>&1
+wget -P ${path}/wget https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/lean/default-settings/files/zzz-default-settings -O  ${path}/wget/zzz-default-settings >/dev/null 2>&1
 sleep 0.3
 #-s代表文件存在不为空,!将他取反
 if [ -s  "${path}/wget/zzz-default-settings" ]; then
