@@ -7,7 +7,7 @@ sysc=`getconf LONG_BIT`
 local timeout=1
 local target=www.google.com
 local ret_code=`curl -I -s --connect-timeout ${timeout} ${target} -w %{http_code} | tail -n1`
-if [[ $USER = "root" ]];then
+if [[ "$UID" = 0 ]];then
     clear
     echo
     echo -e "\033[31m警告：请在非root用户下运行该脚本……\033[0m"
@@ -232,14 +232,21 @@ case $num1 in
 		mkdir -p ${path}/wget
 	fi
 	wget -P ${path}/wget/ 'https://git.io/Jt4cj' -O ${path}/wget/gdlink
-	bash ${path}/wget/gdlink 'https://drive.google.com/u/0/uc?id=1BJTkJgwinKL67i0gb_tG2p3OE-Hv_4uA&export=download' |xargs -n1 wget -c -O ${path}/dev_dl.tar.gz
-	if [[ ! -f ${path}/dev_dl.tar.gz ]]; then
+	bash ${path}/wget/gdlink 'https://drive.google.com/u/0/uc?id=1BJTkJgwinKL67i0gb_tG2p3OE-Hv_4uA&export=download' |xargs -n1 wget -c -O ${path}/xray_update/dev_dl.tar.gz
+	wget -P ${path}/xray_update https://raw.githubusercontent.com/Lenyu2020/openwrt-update-script/main/file/dev_dl.tar.gz.md5 -O  ${path}/xray_update/dev_dl.tar.gz >/dev/null 2>&1
+	#####文件MD5校验########
+	wget -P ${path}/xray_update https://raw.githubusercontent.com/Lenyu2020/openwrt-update-script/main/file/dev_dl.tar.gz.md5 -O  ${path}/xray_update/dev_dl.tar.gz.md5 >/dev/null 2>&1
+	cd ${path}/xray_update && md5sum -c --status ${path}/xray_update/dev_dl.tar.gz.md5
+	if [ $? != 0 ]; then
 		echo "您下载dl文件失败，请检查网络重试…"
+		read -n 1 -p  "请回车，回到子菜单操作…"
 		_dev_dl_downlaond
 	fi
+	rm -rf ${path}/xray_update/dev_dl.tar.gz*
+	cd ${path}
+	#####文件MD5校验########
 	tar -zxvf ${path}/dev_dl.tar.gz && mv -f ${path}/dev_dl/* ${path}/lede/dl >/dev/null 2>&1
 	rm -rf ${path}/wget/gdlink
-	rm -rf ${path}/*dl.tar.gz
 	echo
 	echo -e "\033[32m >>>开发版-源码初始化完成…-> \033[0m"
 	echo
@@ -280,14 +287,20 @@ case $num1 in
 		mkdir -p ${path}/wget
 	fi
 	wget -P ${path}/wget/ 'https://git.io/Jt4cj' -O ${path}/wget/gdlink
-	bash ${path}/wget/gdlink 'https://drive.google.com/u/0/uc?id=1QsoMiy4s0ovNLcbETSaYWEpM_0YYP0rA&export=download' |xargs -n1 wget -c -O ${path}/sta_dl.tar.gz
-	if [[ ! -f ${path}/sta_dl.tar.gz ]]; then
+	bash ${path}/wget/gdlink 'https://drive.google.com/u/0/uc?id=1QsoMiy4s0ovNLcbETSaYWEpM_0YYP0rA&export=download' |xargs -n1 wget -c -O ${path}/xray_update/sta_dl.tar.gz
+	#####文件MD5校验########
+	wget -P ${path}/xray_update https://raw.githubusercontent.com/Lenyu2020/openwrt-update-script/main/file/sta_dl.tar.gz.md5 -O  ${path}/xray_update/sta_dl.tar.gz.md5 >/dev/null 2>&1
+	cd ${path}/xray_update && md5sum -c --status ${path}/xray_update/sta_dl.tar.gz.md5
+	if [ $? != 0 ]; then
 		echo "您下载dl文件失败，请检查网络重试…"
-		_dev_dl_downlaond
+		read -n 1 -p  "请回车，回到子菜单操作…"
+		_sta_dl_downlaond
 	fi
+	rm -rf ${path}/xray_update/sta_dl.tar.gz*
+	cd ${path}
+	#####文件MD5校验########
 	tar -zxvf ${path}/sta_dl.tar.gz && mv -f ${path}/sta_dl/* ${path}/openwrt/dl >/dev/null 2>&1\
 	rm -rf ${path}/wget/gdlink
-	rm -rf ${path}/*dl.tar.gz
 	echo
 	echo -e "\033[32m >>>稳定版-源码初始化完成…-> \033[0m"
 	echo
