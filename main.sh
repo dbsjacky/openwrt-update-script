@@ -4,7 +4,7 @@ function _sys_judg()
 sysa=`cat /etc/issue`
 sysb="Ubuntu"
 sysc=`getconf LONG_BIT`
-local timeout=1
+local timeout=2
 local target=www.google.com
 local ret_code=`curl -I -s --connect-timeout ${timeout} ${target} -w %{http_code} | tail -n1`
 if [[ "$UID" = 0 ]];then
@@ -111,7 +111,7 @@ cat <<EOF
 
 Openwrt Firmware One-click Update Compilation Script
 
-Script By Lenyu	Version v2.3.1
+Script By Lenyu	Version v2.3.2
 
 -----------------------------------
 >>>菜单主页:
@@ -231,9 +231,11 @@ case $num1 in
 	if [ ! -d ${path}/wget ]; then
 		mkdir -p ${path}/wget
 	fi
+	if [ ! -d  "xray_update" ]; then
+	mkdir -p ${path}/xray_update
+	fi
 	wget -P ${path}/wget/ 'https://git.io/Jt4cj' -O ${path}/wget/gdlink
 	bash ${path}/wget/gdlink 'https://drive.google.com/u/0/uc?id=1BJTkJgwinKL67i0gb_tG2p3OE-Hv_4uA&export=download' |xargs -n1 wget -c -O ${path}/xray_update/dev_dl.tar.gz
-	wget -P ${path}/xray_update https://raw.githubusercontent.com/Lenyu2020/openwrt-update-script/main/file/dev_dl.tar.gz.md5 -O  ${path}/xray_update/dev_dl.tar.gz >/dev/null 2>&1
 	#####文件MD5校验########
 	wget -P ${path}/xray_update https://raw.githubusercontent.com/Lenyu2020/openwrt-update-script/main/file/dev_dl.tar.gz.md5 -O  ${path}/xray_update/dev_dl.tar.gz.md5 >/dev/null 2>&1
 	cd ${path}/xray_update && md5sum -c --status ${path}/xray_update/dev_dl.tar.gz.md5
@@ -285,6 +287,9 @@ case $num1 in
 	echo
 	if [ ! -d ${path}/wget ]; then
 		mkdir -p ${path}/wget
+	fi
+	if [ ! -d  "xray_update" ]; then
+	mkdir -p ${path}/xray_update
 	fi
 	wget -P ${path}/wget/ 'https://git.io/Jt4cj' -O ${path}/wget/gdlink
 	bash ${path}/wget/gdlink 'https://drive.google.com/u/0/uc?id=1QsoMiy4s0ovNLcbETSaYWEpM_0YYP0rA&export=download' |xargs -n1 wget -c -O ${path}/xray_update/sta_dl.tar.gz
@@ -1668,4 +1673,3 @@ menu
 }
 _sys_judg
 menu
-#
