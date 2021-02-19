@@ -435,7 +435,7 @@ echo "脚本正在运行中…"
 ##lede
 #由于源码xray位置改变，需要加入一个判断清除必要的文件
 if [ ! -d  "${path}/lede/feeds/helloworld/xray-core" ]; then
-	sed -i 's/#src-git helloworld/src-git helloworld/g'  ${path}/lede/feeds.conf.default
+	sed -i 's/#src-git helloworld/src-git helloworld/'  ${path}/lede/feeds.conf.default
 	rm -rf ${path}/lede/package/lean/xray
 	rm -rf ${path}/lede/tmp
 fi
@@ -1080,7 +1080,7 @@ wget -P ${path}/openwrt/package/lean/default-settings/files https://raw.githubus
 echo
 wget -P ${path}/openwrt/package/base-files/files/bin https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/base-files/files/bin/config_generate -O  ${path}/openwrt/package/base-files/files/bin/config_generate >/dev/null 2>&1
 echo
-sed -i 's/192.168.1.1/192.168.1.2/g' ${path}/openwrt/package/base-files/files/bin/config_generate
+sed -i 's/192.168.1.1/192.168.1.2/' ${path}/openwrt/package/base-files/files/bin/config_generate
 echo
 #检查文件是否下载成功；
 if [[ ( ! -s ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings) || ( ! -s ${path}/openwrt/package/base-files/files/bin/config_generate ) ]]; then # -s 判断文件长度是否不为0；
@@ -1141,7 +1141,7 @@ echo
 if [ ! -d  "xray_update" ]; then
 	mkdir -p ${path}/xray_update
 fi
-sed -i 's/core.build=OpenWrt/core.build=lenyu/g' ${path}/openwrt/feeds/helloworld/xray-core/Makefile
+sed -i 's/core.build=OpenWrt/core.build=lenyu/' ${path}/openwrt/feeds/helloworld/xray-core/Makefile
 #获取xray-core/Makefile最新的版本号信息并修改；
 wget -qO- -t1 -T2 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g' > ${path}/xray_lastest
 #sed 's/\"//g;s/,//g;s/ //g;s/v//g'利用sed数据查找替换；
