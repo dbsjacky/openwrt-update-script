@@ -245,7 +245,7 @@ case $num1 in
 		_dev_dl_downlaond
 	fi
 	cd ${path}
-	#####文件MD5校验########
+	########
 	tar -zxvf ${path}/xray_update/dev_dl.tar.gz && mv -f ${path}/xray_update/dev_dl/* ${path}/lede/dl >/dev/null 2>&1
 	rm -rf ${path}/wget/gdlink
 	rm -rf ${path}/xray_update/dev_dl.tar.gz*
@@ -302,7 +302,7 @@ case $num1 in
 		_sta_dl_downlaond
 	fi
 	cd ${path}
-	#####文件MD5校验########
+	########
 	tar -zxvf ${path}/xray_update/sta_dl.tar.gz && mv -f ${path}/xray_update/sta_dl/* ${path}/openwrt/dl >/dev/null 2>&1
 	rm -rf ${path}/wget/gdlink
 	rm -rf ${path}/xray_update/sta_dl.tar.gz*
