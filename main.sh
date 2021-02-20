@@ -111,7 +111,7 @@ cat <<EOF
 
 Openwrt Firmware One-click Update Compilation Script
 
-Script By Lenyu	Version v2.3.2
+Script By Lenyu	Version v2.3.3
 
 -----------------------------------
 >>>菜单主页:
@@ -240,7 +240,7 @@ case $num1 in
 	wget -P ${path}/xray_update https://raw.githubusercontent.com/Lenyu2020/openwrt-update-script/main/file/dev_dl.tar.gz.md5 -O  ${path}/xray_update/dev_dl.tar.gz.md5 >/dev/null 2>&1
 	cd ${path}/xray_update && md5sum -c --status ${path}/xray_update/dev_dl.tar.gz.md5
 	if [ $? != 0 ]; then
-		echo "您下载dl文件失败，请检查网络重试…"
+		echo "您下载dl文件失败，请检查网络重试/回车后选择N跳过…"
 		read -n 1 -p  "请回车，回到子菜单操作…"
 		_dev_dl_downlaond
 	fi
@@ -297,7 +297,7 @@ case $num1 in
 	wget -P ${path}/xray_update https://raw.githubusercontent.com/Lenyu2020/openwrt-update-script/main/file/sta_dl.tar.gz.md5 -O  ${path}/xray_update/sta_dl.tar.gz.md5 >/dev/null 2>&1
 	cd ${path}/xray_update && md5sum -c --status ${path}/xray_update/sta_dl.tar.gz.md5
 	if [ $? != 0 ]; then
-		echo "您下载dl文件失败，请检查网络重试…"
+		echo "您下载dl文件失败，请检查网络重试/回车后选择N跳过…"
 		read -n 1 -p  "请回车，回到子菜单操作…"
 		_sta_dl_downlaond
 	fi
@@ -352,7 +352,6 @@ case $num2 in
 		cd ${path}/lede
 		sed -i 's/#src-git helloworld/src-git helloworld/g'  ${path}/lede/feeds.conf.default
 		sed -i '$a src-git passwall https://github.com/xiaorouji/openwrt-passwall' ${path}/lede/feeds.conf.default
-		sed -i 's/192.168.1.1/192.168.1.2/g' ${path}/lede/package/base-files/files/bin/config_generate
 	fi
 	#拉去第三方的code
 	git clone https://github.com/vernesong/OpenClash.git ${path}/lede/package/luci-app-openclash
@@ -385,7 +384,6 @@ case $num2 in
 		cd ${path}/openwrt
 		sed -i 's/#src-git helloworld/src-git helloworld/g'  ${path}/openwrt/feeds.conf.default
 		sed -i '$a src-git passwall https://github.com/xiaorouji/openwrt-passwall' ${path}/openwrt/feeds.conf.default
-		sed -i 's/192.168.1.1/192.168.1.2/g' ${path}/openwrt/package/base-files/files/bin/config_generate
 	fi
 	#拉去第三方的code
 	git clone https://github.com/vernesong/OpenClash.git ${path}/openwrt/package/luci-app-openclash
@@ -442,7 +440,6 @@ fi
 #清理
 rm -rf ${path}/lede/rename.sh
 rm -rf ${path}/lede/package/lean/default-settings/files/zzz-default-settings
-rm -rf ${path}/lede/package/base-files/files/bin/config_generate
 rm -rf ${path}/lede/feeds/helloworld/xray-core/Makefile
 echo
 git -C ${path}/lede pull >/dev/null 2>&1
@@ -450,12 +447,71 @@ git -C ${path}/lede rev-parse HEAD > new_lede
 echo
 wget -P ${path}/lede/package/lean/default-settings/files https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/lede/package/lean/default-settings/files/zzz-default-settings >/dev/null 2>&1
 echo
-wget -P ${path}/lede/package/base-files/files/bin https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/base-files/files/bin/config_generate -O  ${path}/lede/package/base-files/files/bin/config_generate >/dev/null 2>&1
-echo
-sed -i 's/192.168.1.1/192.168.1.2/g' ${path}/lede/package/base-files/files/bin/config_generate
+#####网络配置######
+if [[ ! -d "${path}/lede/files/etc/config" ]]; then
+	sed -i 's/192.168.1.2/192.168.1.1/g' ${path}/lede/package/base-files/files/bin/config_generate
+	mkdir -p ${path}/lede/files/etc/config
+	cat>${path}/lede/files/etc/config/network<<EOF
+	config interface 'loopback'
+		option ifname 'lo'
+		option proto 'static'
+		option ipaddr '127.0.0.1'
+		option netmask '255.0.0.0'
+
+	config globals 'globals'
+		option ula_prefix 'fd3f:2c76:9c66::/48'
+
+	config interface 'lan'
+		option type 'bridge'
+		option ifname 'eth0'
+		option proto 'static'
+		option ipaddr '192.168.1.2'
+		option netmask '255.255.255.0'
+		option ip6assign '60'
+
+	config interface 'wan'
+		option ifname 'eth1'
+		option proto 'dhcp'
+
+	config interface 'wan6'
+		option ifname 'eth1'
+		option proto 'dhcpv6'
+EOF
+else
+	if [[ ! -f "${path}/lede/files/etc/config/network" ]]; then
+		cat>${path}/lede/files/etc/config/network<<EOF
+		config interface 'loopback'
+			option ifname 'lo'
+			option proto 'static'
+			option ipaddr '127.0.0.1'
+			option netmask '255.0.0.0'
+
+		config globals 'globals'
+			option ula_prefix 'fd3f:2c76:9c66::/48'
+
+		config interface 'lan'
+			option type 'bridge'
+			option ifname 'eth0'
+			option proto 'static'
+			option ipaddr '192.168.1.2'
+			option netmask '255.255.255.0'
+			option ip6assign '60'
+
+		config interface 'wan'
+			option ifname 'eth1'
+			option proto 'dhcp'
+
+		config interface 'wan6'
+			option ifname 'eth1'
+			option proto 'dhcpv6'
+EOF
+	fi
+
+fi
+######
 echo
 #检查文件是否下载成功；
-if [[ ( ! -s ${path}/lede/package/lean/default-settings/files/zzz-default-settings) || ( ! -s ${path}/lede/package/base-files/files/bin/config_generate ) ]]; then # -s 判断文件长度是否不为0；
+if [[ ! -s ${path}/lede/package/lean/default-settings/files/zzz-default-settings ]]; then # -s 判断文件长度是否不为0；
 	clear
 	echo
 	echo "同步下载openwrt源码出错，请检查网络问题…"
@@ -764,7 +820,7 @@ fi
 #清理
 rm -rf ${path}/lede/rename.sh
 rm -rf ${path}/lede/package/lean/default-settings/files/zzz-default-settings
-rm -rf ${path}/lede/package/base-files/files/bin/config_generate
+#rm -rf ${path}/lede/package/base-files/files/bin/config_generate
 rm -rf ${path}/lede/feeds/helloworld/xray-core/Makefile
 echo
 git -C ${path}/lede pull >/dev/null 2>&1
@@ -772,9 +828,68 @@ git -C ${path}/lede rev-parse HEAD > new_lede
 echo
 wget -P ${path}/lede/package/lean/default-settings/files https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/lean/default-settings/files/zzz-default-settings -O  ${path}/lede/package/lean/default-settings/files/zzz-default-settings >/dev/null 2>&1
 echo
-wget -P ${path}/lede/package/base-files/files/bin https://raw.githubusercontent.com/coolsnowwolf/lede/master/package/base-files/files/bin/config_generate -O  ${path}/lede/package/base-files/files/bin/config_generate >/dev/null 2>&1
-echo
-sed -i 's/192.168.1.1/192.168.1.2/g' ${path}/lede/package/base-files/files/bin/config_generate
+#####网络配置######
+if [[ ! -d "${path}/lede/files/etc/config" ]]; then
+	sed -i 's/192.168.1.2/192.168.1.1/g' ${path}/lede/package/base-files/files/bin/config_generate
+	mkdir -p ${path}/lede/files/etc/config
+	cat>${path}/lede/files/etc/config/network<<EOF
+	config interface 'loopback'
+		option ifname 'lo'
+		option proto 'static'
+		option ipaddr '127.0.0.1'
+		option netmask '255.0.0.0'
+
+	config globals 'globals'
+		option ula_prefix 'fd3f:2c76:9c66::/48'
+
+	config interface 'lan'
+		option type 'bridge'
+		option ifname 'eth0'
+		option proto 'static'
+		option ipaddr '192.168.1.2'
+		option netmask '255.255.255.0'
+		option ip6assign '60'
+
+	config interface 'wan'
+		option ifname 'eth1'
+		option proto 'dhcp'
+
+	config interface 'wan6'
+		option ifname 'eth1'
+		option proto 'dhcpv6'
+EOF
+else
+	if [[ ! -f "${path}/lede/files/etc/config/network" ]]; then
+		cat>${path}/lede/files/etc/config/network<<EOF
+		config interface 'loopback'
+			option ifname 'lo'
+			option proto 'static'
+			option ipaddr '127.0.0.1'
+			option netmask '255.0.0.0'
+
+		config globals 'globals'
+			option ula_prefix 'fd3f:2c76:9c66::/48'
+
+		config interface 'lan'
+			option type 'bridge'
+			option ifname 'eth0'
+			option proto 'static'
+			option ipaddr '192.168.1.2'
+			option netmask '255.255.255.0'
+			option ip6assign '60'
+
+		config interface 'wan'
+			option ifname 'eth1'
+			option proto 'dhcp'
+
+		config interface 'wan6'
+			option ifname 'eth1'
+			option proto 'dhcpv6'
+EOF
+	fi
+
+fi
+######
 echo
 #检查文件是否下载成功；
 if [[ ( ! -s ${path}/lede/package/lean/default-settings/files/zzz-default-settings) || ( ! -s ${path}/lede/package/base-files/files/bin/config_generate ) ]]; then # -s 判断文件长度是否不为0；
@@ -1070,7 +1185,7 @@ fi
 #清理
 rm -rf ${path}/openwrt/rename.sh
 rm -rf ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings
-rm -rf ${path}/openwrt/package/base-files/files/bin/config_generate
+#rm -rf ${path}/openwrt/package/base-files/files/bin/config_generate
 rm -rf ${path}/openwrt/feeds/helloworld/xray-core/Makefile
 echo
 git -C ${path}/openwrt pull >/dev/null 2>&1
@@ -1078,9 +1193,68 @@ git -C ${path}/openwrt rev-parse HEAD > new_openwrt
 echo
 wget -P ${path}/openwrt/package/lean/default-settings/files https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/lean/default-settings/files/zzz-default-settings -O  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings >/dev/null 2>&1
 echo
-wget -P ${path}/openwrt/package/base-files/files/bin https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/base-files/files/bin/config_generate -O  ${path}/openwrt/package/base-files/files/bin/config_generate >/dev/null 2>&1
-echo
-sed -i 's/192.168.1.1/192.168.1.2/' ${path}/openwrt/package/base-files/files/bin/config_generate
+#####网络配置######
+if [[ ! -d "${path}/openwrt/files/etc/config" ]]; then
+	sed -i 's/192.168.1.2/192.168.1.1/g' ${path}/openwrt/package/base-files/files/bin/config_generate
+	mkdir -p ${path}/openwrt/files/etc/config
+	cat>${path}/openwrt/files/etc/config/network<<EOF
+	config interface 'loopback'
+		option ifname 'lo'
+		option proto 'static'
+		option ipaddr '127.0.0.1'
+		option netmask '255.0.0.0'
+
+	config globals 'globals'
+		option ula_prefix 'fd3f:2c76:9c66::/48'
+
+	config interface 'lan'
+		option type 'bridge'
+		option ifname 'eth0'
+		option proto 'static'
+		option ipaddr '192.168.1.2'
+		option netmask '255.255.255.0'
+		option ip6assign '60'
+
+	config interface 'wan'
+		option ifname 'eth1'
+		option proto 'dhcp'
+
+	config interface 'wan6'
+		option ifname 'eth1'
+		option proto 'dhcpv6'
+EOF
+else
+	if [[ ! -f "${path}/openwrt/files/etc/config/network" ]]; then
+		cat>${path}/openwrt/files/etc/config/network<<EOF
+		config interface 'loopback'
+			option ifname 'lo'
+			option proto 'static'
+			option ipaddr '127.0.0.1'
+			option netmask '255.0.0.0'
+
+		config globals 'globals'
+			option ula_prefix 'fd3f:2c76:9c66::/48'
+
+		config interface 'lan'
+			option type 'bridge'
+			option ifname 'eth0'
+			option proto 'static'
+			option ipaddr '192.168.1.2'
+			option netmask '255.255.255.0'
+			option ip6assign '60'
+
+		config interface 'wan'
+			option ifname 'eth1'
+			option proto 'dhcp'
+
+		config interface 'wan6'
+			option ifname 'eth1'
+			option proto 'dhcpv6'
+EOF
+	fi
+
+fi
+######
 echo
 #检查文件是否下载成功；
 if [[ ( ! -s ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings) || ( ! -s ${path}/openwrt/package/base-files/files/bin/config_generate ) ]]; then # -s 判断文件长度是否不为0；
@@ -1393,7 +1567,7 @@ fi
 #清理
 rm -rf ${path}/openwrt/rename.sh
 rm -rf ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings
-rm -rf ${path}/openwrt/package/base-files/files/bin/config_generate
+#rm -rf ${path}/openwrt/package/base-files/files/bin/config_generate
 rm -rf ${path}/openwrt/feeds/helloworld/xray-core/Makefile
 echo
 git -C ${path}/openwrt pull >/dev/null 2>&1
@@ -1401,9 +1575,68 @@ git -C ${path}/openwrt rev-parse HEAD > new_openwrt
 echo
 wget -P ${path}/openwrt/package/lean/default-settings/files https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/lean/default-settings/files/zzz-default-settings -O  ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings >/dev/null 2>&1
 echo
-wget -P ${path}/openwrt/package/base-files/files/bin https://raw.githubusercontent.com/coolsnowwolf/openwrt/lede-17.01/package/base-files/files/bin/config_generate -O  ${path}/openwrt/package/base-files/files/bin/config_generate >/dev/null 2>&1
-echo
-sed -i 's/192.168.1.1/192.168.1.2/g' ${path}/openwrt/package/base-files/files/bin/config_generate
+#####网络配置######
+if [[ ! -d "${path}/openwrt/files/etc/config" ]]; then
+	sed -i 's/192.168.1.2/192.168.1.1/g' ${path}/openwrt/package/base-files/files/bin/config_generate
+	mkdir -p ${path}/openwrt/files/etc/config
+	cat>${path}/openwrt/files/etc/config/network<<EOF
+	config interface 'loopback'
+		option ifname 'lo'
+		option proto 'static'
+		option ipaddr '127.0.0.1'
+		option netmask '255.0.0.0'
+
+	config globals 'globals'
+		option ula_prefix 'fd3f:2c76:9c66::/48'
+
+	config interface 'lan'
+		option type 'bridge'
+		option ifname 'eth0'
+		option proto 'static'
+		option ipaddr '192.168.1.2'
+		option netmask '255.255.255.0'
+		option ip6assign '60'
+
+	config interface 'wan'
+		option ifname 'eth1'
+		option proto 'dhcp'
+
+	config interface 'wan6'
+		option ifname 'eth1'
+		option proto 'dhcpv6'
+EOF
+else
+	if [[ ! -f "${path}/openwrt/files/etc/config/network" ]]; then
+		cat>${path}/openwrt/files/etc/config/network<<EOF
+		config interface 'loopback'
+			option ifname 'lo'
+			option proto 'static'
+			option ipaddr '127.0.0.1'
+			option netmask '255.0.0.0'
+
+		config globals 'globals'
+			option ula_prefix 'fd3f:2c76:9c66::/48'
+
+		config interface 'lan'
+			option type 'bridge'
+			option ifname 'eth0'
+			option proto 'static'
+			option ipaddr '192.168.1.2'
+			option netmask '255.255.255.0'
+			option ip6assign '60'
+
+		config interface 'wan'
+			option ifname 'eth1'
+			option proto 'dhcp'
+
+		config interface 'wan6'
+			option ifname 'eth1'
+			option proto 'dhcpv6'
+EOF
+	fi
+
+fi
+######
 echo
 #检查文件是否下载成功；
 if [[ ( ! -s ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings) || ( ! -s ${path}/openwrt/package/base-files/files/bin/config_generate ) ]]; then # -s 判断文件长度是否不为0；
