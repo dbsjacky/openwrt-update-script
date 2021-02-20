@@ -111,7 +111,7 @@ cat <<EOF
 
 Openwrt Firmware One-click Update Compilation Script
 
-Script By Lenyu	Version v2.3.3
+Script By Lenyu	Version v2.3.6
 
 -----------------------------------
 >>>菜单主页:
@@ -645,6 +645,9 @@ else
 	echo "update" > ${path}/noclash
 	echo $new_clash > old_clash
 fi
+##luci-theme-argon
+git -C ${path}/lede/package/lean/luci-theme-argon  pull >/dev/null 2>&1
+echo
 sleep 0.1
 ####智能判断并替换大雕openwrt版本号的变动并自定义格式####
 #下载GitHub使用raw页面，-P 指定目录 -O强制覆盖效果；
@@ -1025,6 +1028,9 @@ else
 	echo "update" > ${path}/noclash
 	echo $new_clash > old_clash
 fi
+##luci-theme-argon
+git -C ${path}/lede/package/lean/luci-theme-argon  pull >/dev/null 2>&1
+echo
 sleep 0.1
 ####智能判断并替换大雕openwrt版本号的变动并自定义格式####
 #下载GitHub使用raw页面，-P 指定目录 -O强制覆盖效果；
@@ -1390,6 +1396,9 @@ else
 	echo "update" > ${path}/noclash
 	echo $new_clash > old_clash
 fi
+##luci-theme-argon
+git -C ${path}/openwrt/package/lean/luci-theme-argon  pull >/dev/null 2>&1
+echo
 sleep 0.1
 ####智能判断并替换大雕openwrt版本号的变动并自定义格式####
 #下载GitHub使用raw页面，-P 指定目录 -O强制覆盖效果；
@@ -1772,6 +1781,9 @@ else
 	echo "update" > ${path}/noclash
 	echo $new_clash > old_clash
 fi
+##luci-theme-argon
+git -C ${path}/openwrt/package/lean/luci-theme-argon  pull >/dev/null 2>&1
+echo
 sleep 0.1
 ####智能判断并替换大雕openwrt版本号的变动并自定义格式####
 #下载GitHub使用raw页面，-P 指定目录 -O强制覆盖效果；
