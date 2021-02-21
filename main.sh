@@ -1,4 +1,4 @@
-#usr/bin/bash
+#!/usr/bin/bash
 function _sys_judg()
 {
 sysa=`cat /etc/issue`
