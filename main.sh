@@ -1916,5 +1916,6 @@ echo
 read -n 1 -p  "请回车继续…"
 menu
 }
+echo
 _sys_judg
 menu
