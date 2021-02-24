@@ -111,7 +111,7 @@ cat <<EOF
 
 Openwrt Firmware One-click Update Compilation Script
 
-Script By Lenyu	Version v2.3.6
+Script By Lenyu	Version v2.3.8
 
 -----------------------------------
 >>>菜单主页:
@@ -451,7 +451,7 @@ echo
 if [[ ! -d "${path}/lede/files/etc/config" ]]; then
 	sed -i 's/192.168.1.2/192.168.1.1/g' ${path}/lede/package/base-files/files/bin/config_generate
 	mkdir -p ${path}/lede/files/etc/config
-	cat>${path}/lede/files/etc/config/network<<EOF
+	cat>${path}/lede/files/etc/config/network<<-EOF
 	config interface 'loopback'
 		option ifname 'lo'
 		option proto 'static'
@@ -476,10 +476,10 @@ if [[ ! -d "${path}/lede/files/etc/config" ]]; then
 	config interface 'wan6'
 		option ifname 'eth1'
 		option proto 'dhcpv6'
-EOF
+	EOF
 else
 	if [[ ! -f "${path}/lede/files/etc/config/network" ]]; then
-		cat>${path}/lede/files/etc/config/network<<EOF
+		cat>${path}/lede/files/etc/config/network<<-EOF
 		config interface 'loopback'
 			option ifname 'lo'
 			option proto 'static'
@@ -504,7 +504,7 @@ else
 		config interface 'wan6'
 			option ifname 'eth1'
 			option proto 'dhcpv6'
-EOF
+	EOF
 	fi
 
 fi
@@ -835,7 +835,7 @@ echo
 if [[ ! -d "${path}/lede/files/etc/config" ]]; then
 	sed -i 's/192.168.1.2/192.168.1.1/g' ${path}/lede/package/base-files/files/bin/config_generate
 	mkdir -p ${path}/lede/files/etc/config
-	cat>${path}/lede/files/etc/config/network<<EOF
+	cat>${path}/lede/files/etc/config/network<<-EOF
 	config interface 'loopback'
 		option ifname 'lo'
 		option proto 'static'
@@ -860,10 +860,10 @@ if [[ ! -d "${path}/lede/files/etc/config" ]]; then
 	config interface 'wan6'
 		option ifname 'eth1'
 		option proto 'dhcpv6'
-EOF
+	EOF
 else
 	if [[ ! -f "${path}/lede/files/etc/config/network" ]]; then
-		cat>${path}/lede/files/etc/config/network<<EOF
+		cat>${path}/lede/files/etc/config/network<<-EOF
 		config interface 'loopback'
 			option ifname 'lo'
 			option proto 'static'
@@ -888,14 +888,14 @@ else
 		config interface 'wan6'
 			option ifname 'eth1'
 			option proto 'dhcpv6'
-EOF
+	EOF
 	fi
 
 fi
 ######
 echo
 #检查文件是否下载成功；
-if [[ ( ! -s ${path}/lede/package/lean/default-settings/files/zzz-default-settings) || ( ! -s ${path}/lede/package/base-files/files/bin/config_generate ) ]]; then # -s 判断文件长度是否不为0；
+if [[ ( ! -s ${path}/lede/package/lean/default-settings/files/zzz-default-settings) ]]; then # -s 判断文件长度是否不为0；
 	clear
 	echo
 	echo "同步下载openwrt源码出错，请检查网络问题…"
@@ -1203,7 +1203,7 @@ echo
 if [[ ! -d "${path}/openwrt/files/etc/config" ]]; then
 	sed -i 's/192.168.1.2/192.168.1.1/g' ${path}/openwrt/package/base-files/files/bin/config_generate
 	mkdir -p ${path}/openwrt/files/etc/config
-	cat>${path}/openwrt/files/etc/config/network<<EOF
+	cat>${path}/openwrt/files/etc/config/network<<-EOF
 	config interface 'loopback'
 		option ifname 'lo'
 		option proto 'static'
@@ -1228,10 +1228,10 @@ if [[ ! -d "${path}/openwrt/files/etc/config" ]]; then
 	config interface 'wan6'
 		option ifname 'eth1'
 		option proto 'dhcpv6'
-EOF
+	EOF
 else
 	if [[ ! -f "${path}/openwrt/files/etc/config/network" ]]; then
-		cat>${path}/openwrt/files/etc/config/network<<EOF
+		cat>${path}/openwrt/files/etc/config/network<<-EOF
 		config interface 'loopback'
 			option ifname 'lo'
 			option proto 'static'
@@ -1256,14 +1256,14 @@ else
 		config interface 'wan6'
 			option ifname 'eth1'
 			option proto 'dhcpv6'
-EOF
+	EOF
 	fi
 
 fi
 ######
 echo
 #检查文件是否下载成功；
-if [[ ( ! -s ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings) || ( ! -s ${path}/openwrt/package/base-files/files/bin/config_generate ) ]]; then # -s 判断文件长度是否不为0；
+if [[ ( ! -s ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings) ]]; then # -s 判断文件长度是否不为0；
 clear
 echo
 	echo "同步下载openwrt源码出错，请检查网络问题…"
@@ -1588,7 +1588,7 @@ echo
 if [[ ! -d "${path}/openwrt/files/etc/config" ]]; then
 	sed -i 's/192.168.1.2/192.168.1.1/g' ${path}/openwrt/package/base-files/files/bin/config_generate
 	mkdir -p ${path}/openwrt/files/etc/config
-	cat>${path}/openwrt/files/etc/config/network<<EOF
+	cat>${path}/openwrt/files/etc/config/network<<-EOF
 	config interface 'loopback'
 		option ifname 'lo'
 		option proto 'static'
@@ -1613,10 +1613,10 @@ if [[ ! -d "${path}/openwrt/files/etc/config" ]]; then
 	config interface 'wan6'
 		option ifname 'eth1'
 		option proto 'dhcpv6'
-EOF
+	EOF
 else
 	if [[ ! -f "${path}/openwrt/files/etc/config/network" ]]; then
-		cat>${path}/openwrt/files/etc/config/network<<EOF
+		cat>${path}/openwrt/files/etc/config/network<<-EOF
 		config interface 'loopback'
 			option ifname 'lo'
 			option proto 'static'
@@ -1641,14 +1641,14 @@ else
 		config interface 'wan6'
 			option ifname 'eth1'
 			option proto 'dhcpv6'
-EOF
+		EOF
 	fi
 
 fi
 ######
 echo
 #检查文件是否下载成功；
-if [[ ( ! -s ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings) || ( ! -s ${path}/openwrt/package/base-files/files/bin/config_generate ) ]]; then # -s 判断文件长度是否不为0；
+if [[ ( ! -s ${path}/openwrt/package/lean/default-settings/files/zzz-default-settings) ]]; then # -s 判断文件长度是否不为0；
 clear
 echo
 	echo "同步下载openwrt源码出错，请检查网络问题…"
@@ -1916,6 +1916,5 @@ echo
 read -n 1 -p  "请回车继续…"
 menu
 }
-echo
 _sys_judg
 menu
