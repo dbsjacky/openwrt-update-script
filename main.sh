@@ -20,14 +20,16 @@ elif [[ ( $sysa != *$sysb* ) || ( $sysc != 64 ) ]]; then
     echo
     exit
 fi
+
 #检查网络状态
-if [ "x$ret_code" != "x200" ]; then
-	clear
-	echo
-	echo -e "\033[31m警告：您网络不能科学上网，请检查网络后重试…\033[0m"
-	echo
-	exit
-fi
+#if [ "x$ret_code" != "x200" ]; then
+#	clear
+#	echo
+#	echo -e "\033[31m警告：您网络不能科学上网，请检查网络后重试…\033[0m"
+#	echo
+#	exit
+#fi
+
 # 判断是否安装了sudo
 if ! type sudo >/dev/null 2>&1; then
     clear
@@ -111,7 +113,7 @@ cat <<EOF
 
 Openwrt Firmware One-click Update Compilation Script
 
-Script By Lenyu	Version v2.3.8
+Script By Lenyu	Version v2.3.10
 
 -----------------------------------
 >>>菜单主页:
