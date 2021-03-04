@@ -4,9 +4,9 @@ function _sys_judg()
 sysa=`cat /etc/issue`
 sysb="Ubuntu"
 sysc=`getconf LONG_BIT`
-local timeout=2
-local target=www.google.com
-local ret_code=`curl -I -s --connect-timeout ${timeout} ${target} -w %{http_code} | tail -n1`
+# local timeout=2
+# local target=www.google.com
+# local ret_code=`curl -I -s --connect-timeout ${timeout} ${target} -w %{http_code} | tail -n1`
 if [[ "$UID" = 0 ]];then
     clear
     echo
@@ -20,16 +20,14 @@ elif [[ ( $sysa != *$sysb* ) || ( $sysc != 64 ) ]]; then
     echo
     exit
 fi
-
 #检查网络状态
-#if [ "x$ret_code" != "x200" ]; then
-#	clear
-#	echo
-#	echo -e "\033[31m警告：您网络不能科学上网，请检查网络后重试…\033[0m"
-#	echo
-#	exit
-#fi
-
+# if [ "x$ret_code" != "x200" ]; then
+	# clear
+	# echo
+	# echo -e "\033[31m警告：您网络不能科学上网，请检查网络后重试…\033[0m"
+	# echo
+	# exit
+# fi
 # 判断是否安装了sudo
 if ! type sudo >/dev/null 2>&1; then
     clear
@@ -113,7 +111,7 @@ cat <<EOF
 
 Openwrt Firmware One-click Update Compilation Script
 
-Script By Lenyu	Version v2.3.10
+Script By Lenyu	Version v2.3.9
 
 -----------------------------------
 >>>菜单主页:
@@ -388,15 +386,15 @@ case $num2 in
 		sed -i '$a src-git passwall https://github.com/xiaorouji/openwrt-passwall' ${path}/openwrt/feeds.conf.default
 	fi
 	#拉去第三方的code
-	git clone https://github.com/vernesong/OpenClash.git ${path}/openwrt/package/luci-app-openclash
-	cd ${path}/openwrt/package/luci-app-openclash
-	git init
-	git remote add -f origin https://github.com/vernesong/OpenClash.git
-	git config core.sparsecheckout true
-	echo "luci-app-openclash" >> .git/info/sparse-checkout
-	git pull origin master
-	git branch --set-upstream-to=origin/master master
-	cd ${path}/openwrt
+	# git clone https://github.com/vernesong/OpenClash.git ${path}/openwrt/package/luci-app-openclash
+	# cd ${path}/openwrt/package/luci-app-openclash
+	# git init
+	# git remote add -f origin https://github.com/vernesong/OpenClash.git
+	# git config core.sparsecheckout true
+	# echo "luci-app-openclash" >> .git/info/sparse-checkout
+	# git pull origin master
+	# git branch --set-upstream-to=origin/master master
+	# cd ${path}/openwrt
 	#主题
 	rm -rf ${path}/openwrt/package/lean/luci-theme-argon
 	git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git  ${path}/openwrt/package/lean/luci-theme-argon
@@ -1381,9 +1379,9 @@ else
 fi
 echo
 ##openclash
-git -C ${path}/openwrt/package/luci-app-openclash  pull >/dev/null 2>&1
-git -C ${path}/openwrt/package/luci-app-openclash  rev-parse HEAD > new_clash
-new_clash=`cat new_clash`
+# git -C ${path}/openwrt/package/luci-app-openclash  pull >/dev/null 2>&1
+# git -C ${path}/openwrt/package/luci-app-openclash  rev-parse HEAD > new_clash
+# new_clash=`cat new_clash`
 #判断old_clash是否存在，不存在创建
 if [ ! -f "old_clash" ]; then
   echo "old_ssr被删除正在创建！"
@@ -1479,12 +1477,12 @@ EOF
 fi
 sleep 0.2
 noopenwrt=`cat ${path}/noopenwrt`
-noclash=`cat ${path}/noclash`
+#noclash=`cat ${path}/noclash`
 noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
 sleep 0.5
-if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
+if [[ ("$noopenwrt" = "update")  || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
 	clear
 	echo
 	echo "发现更新，请稍后…"
@@ -1765,10 +1763,10 @@ else
 	echo $new_passw > old_passw
 fi
 echo
-##openclash
-git -C ${path}/openwrt/package/luci-app-openclash  pull >/dev/null 2>&1
-git -C ${path}/openwrt/package/luci-app-openclash  rev-parse HEAD > new_clash
-new_clash=`cat new_clash`
+# ##openclash
+# git -C ${path}/openwrt/package/luci-app-openclash  pull >/dev/null 2>&1
+# git -C ${path}/openwrt/package/luci-app-openclash  rev-parse HEAD > new_clash
+# new_clash=`cat new_clash`
 #判断old_clash是否存在，不存在创建
 if [ ! -f "old_clash" ]; then
   echo "old_ssr被删除正在创建！"
@@ -1864,12 +1862,12 @@ EOF
 fi
 sleep 0.2
 noopenwrt=`cat ${path}/noopenwrt`
-noclash=`cat ${path}/noclash`
+#noclash=`cat ${path}/noclash`
 noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
 sleep 0.5
-if [[ ("$noopenwrt" = "update") || ("$noclash" = "update") || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
+if [[ ("$noopenwrt" = "update") || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
 	clear
 	echo
 	echo "发现更新，请稍后…"
