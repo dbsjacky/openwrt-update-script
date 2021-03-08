@@ -1383,19 +1383,19 @@ echo
 # git -C ${path}/openwrt/package/luci-app-openclash  rev-parse HEAD > new_clash
 # new_clash=`cat new_clash`
 #判断old_clash是否存在，不存在创建
-if [ ! -f "old_clash" ]; then
-  echo "old_ssr被删除正在创建！"
-  sleep 0.1
-  echo $new_clash > old_clash
-fi
-sleep 0.1
-old_clash=`cat old_clash`
-if [ "$new_clash" = "$old_clash" ]; then
-	echo "no_update" > ${path}/noclash
-else
-	echo "update" > ${path}/noclash
-	echo $new_clash > old_clash
-fi
+# if [ ! -f "old_clash" ]; then
+  # echo "old_ssr被删除正在创建！"
+  # sleep 0.1
+  # echo $new_clash > old_clash
+# fi
+# sleep 0.1
+# old_clash=`cat old_clash`
+# if [ "$new_clash" = "$old_clash" ]; then
+	# echo "no_update" > ${path}/noclash
+# else
+	# echo "update" > ${path}/noclash
+	# echo $new_clash > old_clash
+# fi
 ##luci-theme-argon
 git -C ${path}/openwrt/package/lean/luci-theme-argon  pull >/dev/null 2>&1
 echo
@@ -1515,7 +1515,7 @@ if [[ ("$noopenwrt" = "update")  || ("$noxray" = "update") || ("$nossr" = "updat
 	fi
 fi
 echo
-if [[ ("$noopenwrt" = "no_update") && ("$noclash" = "no_update") && ("$noxray" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
+if [[ ("$noopenwrt" = "no_update") && ("$noxray" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
 	clear
 	echo
 	echo "呃呃…检查openwrt/ssr+/xray/passwall/openclash源码，没有一个源码更新…开始进入强制更新模式…"
@@ -1768,19 +1768,19 @@ echo
 # git -C ${path}/openwrt/package/luci-app-openclash  rev-parse HEAD > new_clash
 # new_clash=`cat new_clash`
 #判断old_clash是否存在，不存在创建
-if [ ! -f "old_clash" ]; then
-  echo "old_ssr被删除正在创建！"
-  sleep 0.1
-  echo $new_clash > old_clash
-fi
-sleep 0.1
-old_clash=`cat old_clash`
-if [ "$new_clash" = "$old_clash" ]; then
-	echo "no_update" > ${path}/noclash
-else
-	echo "update" > ${path}/noclash
-	echo $new_clash > old_clash
-fi
+# if [ ! -f "old_clash" ]; then
+  # echo "old_ssr被删除正在创建！"
+  # sleep 0.1
+  # echo $new_clash > old_clash
+# fi
+# sleep 0.1
+# old_clash=`cat old_clash`
+# if [ "$new_clash" = "$old_clash" ]; then
+	# echo "no_update" > ${path}/noclash
+# else
+	# echo "update" > ${path}/noclash
+	# echo $new_clash > old_clash
+# fi
 ##luci-theme-argon
 git -C ${path}/openwrt/package/lean/luci-theme-argon  pull >/dev/null 2>&1
 echo
@@ -1900,7 +1900,7 @@ if [[ ("$noopenwrt" = "update") || ("$noxray" = "update") || ("$nossr" = "update
 	fi
 fi
 echo
-if [[ ("$noopenwrt" = "no_update") && ("$noclash" = "no_update") && ("$noxray" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
+if [[ ("$noopenwrt" = "no_update")  && ("$noxray" = "no_update") && ("$nossr" = "no_update" ) && ("$nopassw"  = "no_update" ) ]]; then
 	clear
 	echo
 	echo "呃呃…检查openwrt/ssr+/xray/passwall/openclash源码，没有一个源码更新哟…还是稍安勿躁…"
