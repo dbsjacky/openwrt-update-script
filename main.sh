@@ -1,5 +1,5 @@
-#!/usr/bin/bash
-function _sys_judg()
+#!/bin/bash
+_sys_judg()
 {
 sysa=`cat /etc/issue`
 sysb="Ubuntu"
@@ -55,7 +55,7 @@ fi
 path=$(dirname $(readlink -f $0))
 cd ${path}
 ##################################################
-function menub()
+menub()
 {
 clear
 echo -e `date`
@@ -103,7 +103,7 @@ esac
 
 
 
-function menu()
+menu()
 {
 clear
 echo -e `date`
@@ -145,7 +145,7 @@ case $num1 in
 esac
 }
 
-function _dev_update()
+_dev_update()
 {
 cat <<EOF
 -----------------------------------
@@ -180,7 +180,7 @@ case $num1 in
 esac
 }
 
-function _sta_update()
+_sta_update()
 {
 cat <<EOF
 -----------------------------------
@@ -215,7 +215,7 @@ case $num1 in
 esac
 }
 
-function _dev_dl_downlaond()
+_dev_dl_downlaond()
 {
 clear
 echo -e `date`
@@ -272,7 +272,7 @@ case $num1 in
 esac
 }
 
-function _sta_dl_downlaond()
+_sta_dl_downlaond()
 {
 clear
 echo -e `date`
@@ -330,7 +330,7 @@ esac
 }
 
 
-function _lede_code()
+_lede_code()
 {
 cat <<EOF
 -----------------------------------
@@ -415,7 +415,7 @@ esac
 }
 
 
-function dev_force_update()
+dev_force_update()
 {
 if [[  ! -d ${path}/lede  ]]; then
 	clear
@@ -730,6 +730,8 @@ noclash=`cat ${path}/noclash`
 noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
+#判断是否为x86机型编译，否是结束提示语改变
+grep "CONFIG_TARGET_x86_64=y" ${path}/lede/.config  > ${path}/xray_update/sys_jud
 sleep 0.5
 if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$nossr" = "update" ) || ("$noxray" = "update") || ("$nopassw"  = "update" ) ]]; then
 	clear
@@ -746,21 +748,25 @@ if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$nossr" = "update" 
 	rm -rf ${path}/nolede
 	rm -rf ${path}/nossr
 	rm -rf ${path}/nopassw
-	if [ ! -f ${path}/lede/bin/targets/x86/64/sha256sums ]; then
-		echo
-		echo "固件编译出错，请到${path}/lede/bin/targets/x86/64/目录下查看…"
-		echo
-		read -n 1 -p  "请回车继续…"
-		menu
+	if [ -s  "${path}/xray_update/sys_jud" ]; then
+		if [ ! -f ${path}/lede/bin/targets/x86/64/sha256sums ]; then
+			echo
+			echo "固件编译出错，请到${path}/lede/bin/targets/x86/64/目录下查看…"
+			echo
+			read -n 1 -p  "请回车继续…"
+			menu
+		else
+			echo
+			echo "固件编译成功，脚本退出！"
+			echo
+			echo "编译好的固件在${path}/lede/bin/targets/x86/64/目录下，enjoy！"
+			echo
+			rm -rf ${path}/lede/bin/targets/x86/64/sha256sums
+			read -n 1 -p  "请回车继续…"
+			menu
+		fi
 	else
-		echo
-		echo "固件编译成功，脚本退出！"
-		echo
-		echo "编译好的固件在${path}/lede/bin/targets/x86/64/目录下，enjoy！"
-		echo
-		rm -rf ${path}/lede/bin/targets/x86/64/sha256sums
-		read -n 1 -p  "请回车继续…"
-		menu
+		echo "您编译的是非x86架构的固件，请自行到${path}/lede/bin/targets/*目录里查找所编译的固件…"
 	fi
 fi
 echo
@@ -778,27 +784,31 @@ if [[ ("$nolede" = "no_update") && ("$noclash" = "no_update") && ("$noxray" = "n
 	rm -rf ${path}/nolede
 	rm -rf ${path}/nossr
 	rm -rf ${path}/nopassw
-	if [ ! -f ${path}/lede/bin/targets/x86/64/sha256sums ]; then
-		echo
-		echo "固件编译出错，请到${path}/lede/bin/targets/x86/64/目录下查看…"
-		echo
-		read -n 1 -p  "请回车继续…"
-		menu
+	if [ -s  "${path}/xray_update/sys_jud" ]; then
+		if [ ! -f ${path}/lede/bin/targets/x86/64/sha256sums ]; then
+			echo
+			echo "固件编译出错，请到${path}/lede/bin/targets/x86/64/目录下查看…"
+			echo
+			read -n 1 -p  "请回车继续…"
+			menu
+		else
+			echo
+			echo "固件编译成功，脚本退出！"
+			echo
+			echo "编译好的固件在${path}/lede/bin/targets/x86/64/目录下，enjoy！"
+			echo
+			rm -rf ${path}/lede/bin/targets/x86/64/sha256sums
+			read -n 1 -p  "请回车继续…"
+			menu
+		fi
 	else
-		echo
-		echo "固件编译成功，脚本退出！"
-		echo
-		echo "编译好的固件在${path}/lede/bin/targets/x86/64/目录下，enjoy！"
-		echo
-		rm -rf ${path}/lede/bin/targets/x86/64/sha256sums
-		read -n 1 -p  "请回车继续…"
-		menu
+		echo "您编译的是非x86架构的固件，请自行到${path}/lede/bin/targets/*目录里查找所编译的固件…"
 	fi
 fi
 }
 
 
-function dev_noforce_update()
+dev_noforce_update()
 {
 if [[  ! -d ${path}/lede  ]]; then
 	clear
@@ -1113,6 +1123,8 @@ noclash=`cat ${path}/noclash`
 noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
+#判断是否为x86机型编译，否是结束提示语改变
+grep "CONFIG_TARGET_x86_64=y" ${path}/lede/.config  > ${path}/xray_update/sys_jud
 sleep 0.5
 if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
 	clear
@@ -1129,21 +1141,25 @@ if [[ ("$nolede" = "update") || ("$noclash" = "update") || ("$noxray" = "update"
 	rm -rf ${path}/nolede
 	rm -rf ${path}/nossr
 	rm -rf ${path}/nopassw
-	if [ ! -f ${path}/lede/bin/targets/x86/64/sha256sums ]; then
-		echo
-		echo "固件编译出错，请到${path}/lede/bin/targets/x86/64/目录下查看…"
-		echo
-		read -n 1 -p  "请回车继续…"
-		menu
+	if [ -s  "${path}/xray_update/sys_jud" ]; then
+		if [ ! -f ${path}/lede/bin/targets/x86/64/sha256sums ]; then
+			echo
+			echo "固件编译出错，请到${path}/lede/bin/targets/x86/64/目录下查看…"
+			echo
+			read -n 1 -p  "请回车继续…"
+			menu
+		else
+			echo
+			echo "固件编译成功，脚本退出！"
+			echo
+			echo "编译好的固件在${path}/lede/bin/targets/x86/64/目录下，enjoy！"
+			echo
+			rm -rf ${path}/lede/bin/targets/x86/64/sha256sums
+			read -n 1 -p  "请回车继续…"
+			menu
+		fi
 	else
-		echo
-		echo "固件编译成功，脚本退出！"
-		echo
-		echo "编译好的固件在${path}/lede/bin/targets/x86/64/目录下，enjoy！"
-		echo
-		rm -rf ${path}/lede/bin/targets/x86/64/sha256sums
-		read -n 1 -p  "请回车继续…"
-		menu
+		echo "您编译的是非x86架构的固件，请自行到${path}/lede/bin/targets/*目录里查找所编译的固件…"
 	fi
 fi
 echo
@@ -1166,7 +1182,7 @@ menu
 
 
 
-function sta_force_update()
+sta_force_update()
 {
 if [[  ! -d ${path}/openwrt  ]]; then
 	clear
@@ -1481,6 +1497,8 @@ noopenwrt=`cat ${path}/noopenwrt`
 noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
+#判断是否为x86机型编译，否是结束提示语改变
+grep "CONFIG_TARGET_x86_64=y" ${path}/openwrt/.config  > ${path}/xray_update/sys_jud
 sleep 0.5
 if [[ ("$noopenwrt" = "update")  || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
 	clear
@@ -1497,21 +1515,25 @@ if [[ ("$noopenwrt" = "update")  || ("$noxray" = "update") || ("$nossr" = "updat
 	rm -rf ${path}/noopenwrt
 	rm -rf ${path}/nossr
 	rm -rf ${path}/nopassw
-	if [ ! -f ${path}/openwrt/bin/targets/x86/64/sha256sums ]; then
-		echo
-		echo "固件编译出错，请到${path}/openwrt/bin/targets/x86/64/目录下查看…"
-		echo
-		read -n 1 -p  "请回车继续…"
-		menu
+	if [ -s  "${path}/xray_update/sys_jud" ]; then
+		if [ ! -f ${path}/openwrt/bin/targets/x86/64/sha256sums ]; then
+			echo
+			echo "固件编译出错，请到${path}/openwrt/bin/targets/x86/64/目录下查看…"
+			echo
+			read -n 1 -p  "请回车继续…"
+			menu
+		else
+			echo
+			echo "固件编译成功，脚本退出！"
+			echo
+			echo "编译好的固件在${path}/openwrt/bin/targets/x86/64/目录下，enjoy！"
+			echo
+			rm -rf ${path}/openwrt/bin/targets/x86/64/sha256sums
+			read -n 1 -p  "请回车继续…"
+			menu
+		fi
 	else
-		echo
-		echo "固件编译成功，脚本退出！"
-		echo
-		echo "编译好的固件在${path}/openwrt/bin/targets/x86/64/目录下，enjoy！"
-		echo
-		rm -rf ${path}/openwrt/bin/targets/x86/64/sha256sums
-		read -n 1 -p  "请回车继续…"
-		menu
+		echo "您编译的是非x86架构的固件，请自行到${path}/openwrt/bin/targets/*目录里查找所编译的固件…"
 	fi
 fi
 echo
@@ -1529,21 +1551,25 @@ if [[ ("$noopenwrt" = "no_update") && ("$noxray" = "no_update") && ("$nossr" = "
 	rm -rf ${path}/noopenwrt
 	rm -rf ${path}/nossr
 	rm -rf ${path}/nopassw
-	if [ ! -f ${path}/openwrt/bin/targets/x86/64/sha256sums ]; then
-		echo
-		echo "固件编译出错，请到${path}/openwrt/bin/targets/x86/64/目录下查看…"
-		echo
-		read -n 1 -p  "请回车继续…"
-		menu
+	if [ -s  "${path}/xray_update/sys_jud" ]; then
+		if [ ! -f ${path}/openwrt/bin/targets/x86/64/sha256sums ]; then
+			echo
+			echo "固件编译出错，请到${path}/openwrt/bin/targets/x86/64/目录下查看…"
+			echo
+			read -n 1 -p  "请回车继续…"
+			menu
+		else
+			echo
+			echo "固件编译成功，脚本退出！"
+			echo
+			echo "编译好的固件在${path}/openwrt/bin/targets/x86/64/目录下，enjoy！"
+			echo
+			rm -rf ${path}/openwrt/bin/targets/x86/64/sha256sums
+			read -n 1 -p  "请回车继续…"
+			menu
+		fi
 	else
-		echo
-		echo "固件编译成功，脚本退出！"
-		echo
-		echo "编译好的固件在${path}/openwrt/bin/targets/x86/64/目录下，enjoy！"
-		echo
-		rm -rf ${path}/openwrt/bin/targets/x86/64/sha256sums
-		read -n 1 -p  "请回车继续…"
-		menu
+		echo "您编译的是非x86架构的固件，请自行到${path}/openwrt/bin/targets/*目录里查找所编译的固件…"
 	fi
 fi
 }
@@ -1551,7 +1577,7 @@ fi
 
 
 
-function sta_noforce_update()
+sta_noforce_update()
 {
 if [[  ! -d ${path}/openwrt  ]]; then
 	clear
@@ -1866,6 +1892,8 @@ noopenwrt=`cat ${path}/noopenwrt`
 noxray=`cat ${path}/noxray`
 nossr=`cat ${path}/nossr`
 nopassw=`cat ${path}/nopassw`
+#判断是否为x86机型编译，否是结束提示语改变
+grep "CONFIG_TARGET_x86_64=y" ${path}/openwrt/.config  > ${path}/xray_update/sys_jud
 sleep 0.5
 if [[ ("$noopenwrt" = "update") || ("$noxray" = "update") || ("$nossr" = "update" ) || ("$nopassw"  = "update" ) ]]; then
 	clear
@@ -1882,21 +1910,25 @@ if [[ ("$noopenwrt" = "update") || ("$noxray" = "update") || ("$nossr" = "update
 	rm -rf ${path}/noopenwrt
 	rm -rf ${path}/nossr
 	rm -rf ${path}/nopassw
-	if [ ! -f ${path}/openwrt/bin/targets/x86/64/sha256sums ]; then
-		echo
-		echo "固件编译出错，请到${path}/openwrt/bin/targets/x86/64/目录下查看…"
-		echo
-		read -n 1 -p  "请回车继续…"
-		menu
+	if [ -s  "${path}/xray_update/sys_jud" ]; then
+		if [ ! -f ${path}/openwrt/bin/targets/x86/64/sha256sums ]; then
+			echo
+			echo "固件编译出错，请到${path}/openwrt/bin/targets/x86/64/目录下查看…"
+			echo
+			read -n 1 -p  "请回车继续…"
+			menu
+		else
+			echo
+			echo "固件编译成功，脚本退出！"
+			echo
+			echo "编译好的固件在${path}/openwrt/bin/targets/x86/64/目录下，enjoy！"
+			echo
+			rm -rf ${path}/openwrt/bin/targets/x86/64/sha256sums
+			read -n 1 -p  "请回车继续…"
+			menu
+		fi
 	else
-		echo
-		echo "固件编译成功，脚本退出！"
-		echo
-		echo "编译好的固件在${path}/openwrt/bin/targets/x86/64/目录下，enjoy！"
-		echo
-		rm -rf ${path}/openwrt/bin/targets/x86/64/sha256sums
-		read -n 1 -p  "请回车继续…"
-		menu
+		echo "您编译的是非x86架构的固件，请自行到${path}/openwrt/bin/targets/*目录里查找所编译的固件…"
 	fi
 fi
 echo
