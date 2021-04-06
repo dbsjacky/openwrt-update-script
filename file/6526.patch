@@ -1,4 +1,7 @@
 #By klever1988
+#在 make download 之前执行
+#wget https://github.com/coolsnowwolf/lede/pull/6526.patch
+#git apply 6526.patch
 From 0ab69c05d0483ac240f0fd2a6b51b268ca5d99f5 Mon Sep 17 00:00:00 2001
 From: John Doe <klever1988@protonmail.com>
 Date: Sat, 13 Mar 2021 15:36:24 +0800
