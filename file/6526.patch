@@ -1,0 +1,100 @@
+#By klever1988
+#在 make download 之前执行
+#wget https://github.com/coolsnowwolf/lede/pull/6526.patch
+#git apply 6526.patch
+From 0ab69c05d0483ac240f0fd2a6b51b268ca5d99f5 Mon Sep 17 00:00:00 2001
+From: John Doe <klever1988@protonmail.com>
+Date: Sat, 13 Mar 2021 15:36:24 +0800
+Subject: [PATCH 1/2] switch doanlod tool from curl to aria2
+
+---
+ scripts/download.pl | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/scripts/download.pl b/scripts/download.pl
+index 0ce9106b2451..baa5c30dd082 100755
+--- a/scripts/download.pl
++++ b/scripts/download.pl
+@@ -70,10 +70,15 @@ ()
+ 	return undef;
+ }
+
+-sub download_cmd($) {
++sub download_cmd {
+ 	my $url = shift;
+ 	my $have_curl = 0;
++	my $fn = shift;
++	my @mrs = @_;
++	my $murl = "'$url'";
+
++	my @chArray = ('a'..'z', 'A'..'Z', 0..9);
++	my $rfn = join '', map{ $chArray[int rand @chArray] } 0..9;
+ 	if (open CURL, '-|', 'curl', '--version') {
+ 		if (defined(my $line = readline CURL)) {
+ 			$have_curl = 1 if $line =~ /^curl /;
+@@ -81,8 +86,12 @@ ($)
+ 		close CURL;
+ 	}
+
++	for my $el (@mrs) {
++		$murl = $murl." '$el/$fn'";
++	}
++
+ 	return $have_curl
+-		? (qw(curl -f --connect-timeout 20 --retry 5 --location --insecure), shellwords($ENV{CURL_OPTIONS} || ''), $url)
++		? ("aria2c --stderr $murl -c -x2 -s10 -j10 -k1M --server-stat-of=/dev/shm/spp --server-stat-if=/dev/shm/spp -d /dev/shm -o $rfn; cat /dev/shm/$rfn; rm /dev/shm/$rfn")
+ 		: (qw(wget --tries=5 --timeout=20 --no-check-certificate --output-document=-), shellwords($ENV{WGET_OPTIONS} || ''), $url)
+ 	;
+ }
+@@ -93,6 +102,7 @@ ($)
+ sub download
+ {
+ 	my $mirror = shift;
++	my @mrs = @_;
+
+ 	$mirror =~ s!/$!!;
+
+@@ -139,7 +149,7 @@ sub download
+ 			}
+ 		};
+ 	} else {
+-		my @cmd = download_cmd("$mirror/$url_filename");
++		my @cmd = download_cmd("$mirror/$url_filename", $url_filename, @mrs);
+ 		print STDERR "+ ".join(" ",@cmd)."\n";
+ 		open(FETCH_FD, '-|', @cmd) or die "Cannot launch curl or wget.\n";
+ 		$hash_cmd and do {
+@@ -270,10 +280,12 @@ sub cleanup
+ push @mirrors, 'https://mirror2.openwrt.org/sources';
+
+ while (!-f "$target/$filename") {
++	print "@mirrors\n";
+ 	my $mirror = shift @mirrors;
+ 	$mirror or die "No more mirrors to try - giving up.\n";
+
+-	download($mirror);
++	download($mirror, @mirrors);
++	@mirrors=();
+ }
+
+ $SIG{INT} = \&cleanup;
+
+From 4c1b5bdcc02bc2f8424fb949d15076e677862bf7 Mon Sep 17 00:00:00 2001
+From: John Doe <klever1988@protonmail.com>
+Date: Sat, 13 Mar 2021 15:48:11 +0800
+Subject: [PATCH 2/2] remove unuseful line
+
+---
+ scripts/download.pl | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/scripts/download.pl b/scripts/download.pl
+index baa5c30dd082..1745388f0a0d 100755
+--- a/scripts/download.pl
++++ b/scripts/download.pl
+@@ -280,7 +280,6 @@ sub cleanup
+ push @mirrors, 'https://mirror2.openwrt.org/sources';
+
+ while (!-f "$target/$filename") {
+-	print "@mirrors\n";
+ 	my $mirror = shift @mirrors;
+ 	$mirror or die "No more mirrors to try - giving up.\n";
