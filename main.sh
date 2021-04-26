@@ -101,8 +101,6 @@ case $num1 in
 esac
 }
 
-
-
 menu()
 {
 clear
