@@ -111,7 +111,7 @@ cat <<EOF
 
 Openwrt Firmware One-click Update Compilation Script
 
-Script By Lenyu	Version v2.4.1
+Script By Lenyu	Version v2.4.2
 
 -----------------------------------
 >>>菜单主页:
