@@ -5,6 +5,7 @@
 # cd ${path}
 rm -f /tmp/cloud_version
 # 获取固件云端版本号、内核版本号信息
+current_version=`cat /etc/lenyu_version`
 wget -qO- -t1 -T2 "https://api.github.com/repos/Lenyu2020/openwrt-update-script/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g'  > /tmp/cloud_ts_version
 if [ -s  "/tmp/cloud_ts_version" ]; then
 	cloud_version=`cat /tmp/cloud_ts_version | cut -d _ -f 1`
@@ -26,25 +27,35 @@ echo $Firmware_Type > /etc/lenyu_firmware_type
 #改名之前需要进行md5值验证
 #到底下载什么类型的固件升级需要判断
 if [ ! -d /sys/firmware/efi ];then
-	wget -P /tmp "$DEV_URL" -O /tmp/openwrt_x86-64-${new_version}_dev_Lenyu.img.gz  >/dev/null 2>&1
-	wget -P /tmp "$openwrt_dev" -O /tmp/openwrt_dev.md5  >/dev/null 2>&1
-	cd /tmp && md5sum -c openwrt_dev.md5
+	if [ "$current_version" != "$cloud_version" ];then
+		wget -P /tmp "$DEV_URL" -O /tmp/openwrt_x86-64-${new_version}_dev_Lenyu.img.gz  >/dev/null 2>&1
+		wget -P /tmp "$openwrt_dev" -O /tmp/openwrt_dev.md5  >/dev/null 2>&1
+		cd /tmp && md5sum -c openwrt_dev.md5
 		if [ $? != 0 ]; then
 		echo "您下载文件失败，请检查网络重试过…"
 		sleep 4
 		exit
 		fi
-	Boot_type=logic
+		Boot_type=logic
+	else
+		echo -e "\033[32m 本地已经是最新版本，还更个鸡巴毛啊…-> \033[0m"
+		exit
+	fi
 else
-	wget -P /tmp "$DEV_UEFI_URL" -O /tmp/openwrt_x86-64-${new_version}_uefi-gpt_dev_Lenyu.img.gz >/dev/null 2>&1
-	wget -P /tmp "$openwrt_dev_uefi" -O /tmp/openwrt_dev_uefi.md5 >/dev/null 2>&1
-	cd /tmp && md5sum -c openwrt_dev_uefi.md5
+	if [ "$current_version" != "$cloud_version" ];then
+		wget -P /tmp "$DEV_UEFI_URL" -O /tmp/openwrt_x86-64-${new_version}_uefi-gpt_dev_Lenyu.img.gz >/dev/null 2>&1
+		wget -P /tmp "$openwrt_dev_uefi" -O /tmp/openwrt_dev_uefi.md5 >/dev/null 2>&1
+		cd /tmp && md5sum -c openwrt_dev_uefi.md5
 		if [ $? != 0 ]; then
 		echo "您下载文件失败，请检查网络重试过…"
 		sleep 4
 		exit
 		fi
-	Boot_type=efi
+		Boot_type=efi
+	else
+		echo -e "\033[32m 本地已经是最新版本，还更个鸡巴毛啊…-> \033[0m"
+		exit
+	fi
 fi
 
 open_up()
@@ -91,6 +102,3 @@ esac
 open_up
 
 exit 0
-
-
-
