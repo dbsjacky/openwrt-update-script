@@ -1,14 +1,9 @@
 #!/bin/bash
 # https://github.com/Lenyu2020/openwrt-update-script
 # openwrt-update-script By Lenyu 20210426
-# run  bash "/usr/share/romupdate/Check_Update.sh"
 #path=$(dirname $(readlink -f $0))
 # cd ${path}
 rm -f /tmp/cloud_version
-# if [ ! -f /bin/AutoUpdate.sh ];then
-	# echo "未检测到 /bin/AutoUpdate.sh" > /tmp/cloud_version
-	# exit
-# fi
 # 获取固件云端版本号、内核版本号信息
 wget -qO- -t1 -T2 "https://api.github.com/repos/Lenyu2020/openwrt-update-script/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g;s/v//g'  > /tmp/cloud_ts_version
 if [ -s  "/tmp/cloud_ts_version" ]; then
