@@ -101,8 +101,6 @@ case $num1 in
 esac
 }
 
-
-
 menu()
 {
 clear
@@ -111,7 +109,7 @@ cat <<EOF
 
 Openwrt Firmware One-click Update Compilation Script
 
-Script By Lenyu	Version v2.4.0
+Script By Lenyu	Version v2.4.2
 
 -----------------------------------
 >>>菜单主页:
